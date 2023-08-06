@@ -38,7 +38,7 @@ class VitalSignsDataframe(object):
 
 assessmentsDFs={}
 
-SupesGoalsTab=[]
+supesGoalsTab=[]
 
 
 def magicDF(assessment_type):
@@ -53,7 +53,7 @@ def magicDF(assessment_type):
 	assessmentsDFs[assessment_type]=df
 	return(df)
 	
-def create_assessments(gc):
+def createAssessments(gc):
 	assessments={}
 
 	#SAEBRS W2022
@@ -228,7 +228,7 @@ def create_assessments(gc):
 			
 	return(assessments)						
 
-def WinterWindowFilter(vs_obj):
+def winterWindowFilter(vs_obj):
 	if 'ScreeningPeriodWindowName' in vs_obj.df.columns:
 		vs_obj.df=vs_obj.df.loc[(vs_obj.df['ScreeningPeriodWindowName'] == 'Winter')] 
 	elif ('Completion Date' in vs_obj.df.columns) and (vs_obj.terms[0] == 'W2022'):
@@ -237,7 +237,7 @@ def WinterWindowFilter(vs_obj):
 		vs_obj.df=vs_obj.df.loc[mask]
 
 
-def SpringWindowFilter(vs_obj):
+def springWindowFilter(vs_obj):
 	if 'ScreeningPeriodWindowName' in vs_obj.df.columns:
 		vs_obj.df=vs_obj.df.loc[(vs_obj.df['ScreeningPeriodWindowName'] == 'Spring')]
 	elif ('Completion Date' in vs_obj.df.columns) and (vs_obj.terms[0] == 'SP2023'):
@@ -257,7 +257,7 @@ def iReadyFilter(vs_obj):
 	if vs_obj.subjects[0] == 'read':
 		vs_obj.df=vs_obj.df[vs_obj.df['Grade Level'].isin(['0.0','0.1','2.0','3.0','4.0','5.0','6.0','7.0','8.0'])]
 
-def GradeLevel_addColumns(vs_obj, grade_lvl_df):
+def gradeLevelAddColumns(vs_obj, grade_lvl_df):
 	idx_rename = {'All':'District'} 
 	grade_lvl_df = grade_lvl_df.rename(index=idx_rename)
 	assessment_name=vs_obj.assessment_type+" "+vs_obj.subjects[0].title()
@@ -295,18 +295,18 @@ def GradeLevel_addColumns(vs_obj, grade_lvl_df):
 	grade_lvl_df.insert(0,"Assessment",[assessment_name]*len(grade_lvl_df))
 	return(grade_lvl_df)
 
-def mergeDemos(df_assessment, df_Demos):
-	return(pd.merge(df_assessment, df_Demos, how="left", on='Student_Number'))
+def mergeDemos(df_assessment, dfDemos):
+	return(pd.merge(df_assessment, dfDemos, how="left", on='Student_Number'))
 	
 # Codify school names so that all files have same school names
-def codify_schoolnames(df_assessment):
+def codifySchoolnames(df_assessment):
 	if 'School_Code' in df_assessment.columns:
 		df_assessment['School_Short']=df_assessment['School_Code'].map(SchoolId_to_Short)
 	else:
 		df_assessment['School_Short']=df_assessment['School'].map(Short_names)
 
 
-def STARFilters(vs_obj):
+def starFilters(vs_obj):
 
 		if vs_obj.terms[0] == 'FA2022':
 			vs_obj.df=vs_obj.df.loc[(vs_obj.df['ScreeningPeriodWindowName'] == 'Fall') | (vs_obj.df['ScreeningPeriodWindowName'] == 'Round 1')]
@@ -328,7 +328,7 @@ def STARFilters(vs_obj):
 		if vs_obj.subjects[0] == 'EarlyLit' or vs_obj.subjects[0] == 'SpEarlyLit':
 			vs_obj.df=vs_obj.df[vs_obj.df['Grade Level'].isin([0,1])]
 
-def NewSTARFilter(vs_obj):
+def newSTARFilter(vs_obj):
 		if vs_obj.terms[0] == 'FA2022':
 			vs_obj.df=vs_obj.df.loc[(vs_obj.df['ScreeningPeriodWindowName'] == 'Fall') | (vs_obj.df['ScreeningPeriodWindowName'] == 'Round 1')]
 		if vs_obj.terms[0] == 'W2022':
@@ -344,7 +344,7 @@ def NewSTARFilter(vs_obj):
 		
 		
 
-def ChronicAbs(vs_obj, metric_column_index,Final_dfs_list):
+def chronicAbs(vs_obj, metric_column_index,finalDfs):
 	
 	vs_obj.df=vs_obj.df[vs_obj.df['studentStatus'] =='Active']
 	rslt=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df['absCategory']], 
@@ -378,8 +378,8 @@ def ChronicAbs(vs_obj, metric_column_index,Final_dfs_list):
 							values='Chronic&Severe')
 	rslt_GL=rslt_GL.replace(to_replace="*%",value="*").replace(to_replace="nan%",value="")
 	
-	grade_lvl=GradeLevel_addColumns(vs_obj, rslt_GL)
-	GradeLevelTab.append(grade_lvl)
+	grade_lvl=gradeLevelAddColumns(vs_obj, rslt_GL)
+	gradeLevelTab.append(grade_lvl)
 	
 	
 	#Race
@@ -454,12 +454,12 @@ def ChronicAbs(vs_obj, metric_column_index,Final_dfs_list):
 	
 	#rslt_race=pd.concat([rslt, rslt_race])
 
-	Final_dfs_list.append(rslt)
-	Final_dfs_list.append(rslt_race)
+	finalDfs.append(rslt)
+	finalDfs.append(rslt_race)
 	
-	subgroups(vs_obj,0,Final_dfs_list)					
+	subgroups(vs_obj,0,finalDfs)					
 
-def ESGI(vs_obj, Final_dfs_list):
+def ESGI(vs_obj, finalDfs):
 	
 	test_names=['WCCUSD Uppercase Letters (PLF R 3.2)','WCCUSD Number Recognition 0-12 (PLF NS 1.2)','WCCUSD Lowercase Letters (PLF R 3.2)']
 	names={'WCCUSD Uppercase Letters (PLF R 3.2)':'UppCaseLet3','WCCUSD Number Recognition 0-12 (PLF NS 1.2)':'NumRec3','WCCUSD Lowercase Letters (PLF R 3.2)':'LowCaseLet'}
@@ -491,7 +491,7 @@ def ESGI(vs_obj, Final_dfs_list):
 		MetEOYBenchmark=MetEOYBenchmark.set_index('School_Short')
 		
 	
-		Final_dfs_list.append(MetEOYBenchmark)
+		finalDfs.append(MetEOYBenchmark)
 		
 		#GradeLevel Tab
 		new=vs_obj.df.loc[vs_obj.df['Test Name']== test_name]
@@ -533,7 +533,7 @@ def ESGI(vs_obj, Final_dfs_list):
 
 		ESGI_GL=ESGI_GL.reset_index().set_index('School_Short')
 		
-		GradeLevelTab.append(ESGI_GL)
+		gradeLevelTab.append(ESGI_GL)
 
 		#ESGI Race	
 		vs_obj.df=vs_obj.df.rename(columns= {'Race_Ethn_y':'Race_Ethn', 'SPED_y':'SPED', 'FIT_y':'FIT',
@@ -598,7 +598,7 @@ def ESGI(vs_obj, Final_dfs_list):
 				ESGI_Race=ESGI_Race.drop(columns=col)
 
 		
-		Final_dfs_list.append(ESGI_Race)
+		finalDfs.append(ESGI_Race)
 		
 		vs_obj.df.loc[vs_obj.df['SPED'] =='ESN', 'SPED'] = 'Y'
 		vs_obj.df.loc[vs_obj.df['SPED']=='MMSN', 'SPED'] = 'Y'
@@ -662,18 +662,18 @@ def ESGI(vs_obj, Final_dfs_list):
 			final_subgroup_count=final_subgroup_count.replace(to_replace="*%",value="*").replace(to_replace="%",value="")
 			final_subgroup_count=final_subgroup_count.drop(columns=column.name)
 			
-			Final_dfs_list.append(final_subgroup_count)
+			finalDfs.append(final_subgroup_count)
 		
 	
-def STAR_SB(vs_obj, Final_dfs_list):
+def starSB(vs_obj, finalDfs):
 	idx_rename = {'All':'District'} 
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 
     #new for 23-24 only calculating 9-11
-	NewSTARFilter(vs_obj)
+	newSTARFilter(vs_obj)
 
-	#for previous cycles grade level filters were applied using the STARFilters(vs_obj) function
-	#STARFilters(vs_obj)
+	#for previous cycles grade level filters were applied using the starFilters(vs_obj) function
+	#starFilters(vs_obj)
 
 	vs_obj.df=vs_obj.df.sort_values('CompletedDate').groupby('Student_Number').tail(1)
 	vs_obj.df=vs_obj.df[vs_obj.df.AssessmentStatus =='Active']
@@ -692,7 +692,7 @@ def STAR_SB(vs_obj, Final_dfs_list):
 	SBcrosstab_ALL.rename(columns=rename, inplace=True)
 	
 	SBcrosstab_ALL = SBcrosstab_ALL.rename(index=idx_rename)
-	Final_dfs_list.append(SBcrosstab_ALL)
+	finalDfs.append(SBcrosstab_ALL)
 	
 	SBcrosstab=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df.Race_Ethn,vs_obj.df.StateBenchmarkProficient])
 	Sbcrosstab=SBcrosstab.T
@@ -744,18 +744,18 @@ def STAR_SB(vs_obj, Final_dfs_list):
 	
 
 	rslt = pd.concat([rslt, supes_race])
-	Final_dfs_list.append(rslt)
+	finalDfs.append(rslt)
 	
-	subgroups(vs_obj,0, Final_dfs_list)
-	grade_levels(vs_obj, 0, Final_dfs_list)
+	subgroups(vs_obj,0, finalDfs)
+	grade_levels(vs_obj, 0, finalDfs)
 	
-def SEL_SGP(vs_obj, Final_dfs_list):
+def selSGP(vs_obj, finalDfs):
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 	
 	#not calculated for Fall. No Growth measure exists until Winter
 	if (vs_obj.subjects[0] == 'EarlyLit') and ('W2022' in vs_obj.terms):
 		vs_obj.df=vs_obj.df[vs_obj.df.AssessmentStatus =='Active']
-		STARFilters(vs_obj)
+		starFilters(vs_obj)
 		vs_obj.df['StudentGrowthPercentileFallWinter']=pd.to_numeric(vs_obj.df['StudentGrowthPercentileFallWinter'])
 		vs_obj.df=vs_obj.df.dropna()	
 		vs_obj.df['StudentGrowthPercentileFallWinter'] = vs_obj.df['StudentGrowthPercentileFallWinter'].astype(int)	
@@ -766,7 +766,7 @@ def SEL_SGP(vs_obj, Final_dfs_list):
 
 	if (vs_obj.subjects[0] == 'EarlyLit' or vs_obj.subjects[0] == 'SPEarlyLit') and ('SP2023' in vs_obj.terms):
 		vs_obj.df=vs_obj.df[vs_obj.df.AssessmentStatus =='Active']
-		STARFilters(vs_obj)
+		starFilters(vs_obj)
 		vs_obj.df['StudentGrowthPercentileFallSpring']=pd.to_numeric(vs_obj.df['StudentGrowthPercentileFallSpring'])
 		vs_obj.df=vs_obj.df.dropna()	
 		vs_obj.df['StudentGrowthPercentileFallSpring'] = vs_obj.df['StudentGrowthPercentileFallSpring'].astype(int)	
@@ -789,7 +789,7 @@ def SEL_SGP(vs_obj, Final_dfs_list):
 		rslt=rslt.replace(to_replace="-100.0%",value="*")
 		rslt=rslt.rename(columns={'SGPPercentage':vs_obj.assessment_column+vs_obj.subjects[0]+vs_obj.metrics[0]+" ALL_"+vs_obj.terms[0]})
 		
-		Final_dfs_list.append(rslt)
+		finalDfs.append(rslt)
 
 		vs_obj.df.loc[vs_obj.df['SPED'] =='ESN', 'SPED'] = 'Y'
 		vs_obj.df.loc[vs_obj.df['SPED']=='MMSN', 'SPED'] = 'Y'
@@ -833,7 +833,7 @@ def SEL_SGP(vs_obj, Final_dfs_list):
 			tableframe=tableframe.set_index('School_Short')
 			tableframe.rename({tableframe.index[-1]: 'District'}, inplace=True)
 			
-			Final_dfs_list.append(tableframe)
+			finalDfs.append(tableframe)
 
 				
 		#Race SEL SGP
@@ -887,20 +887,20 @@ def SEL_SGP(vs_obj, Final_dfs_list):
 		rslt = pd.concat([SELSGP_Race2, dist_table])
 		rslt=rslt.replace(to_replace="-1%", value="*").replace(to_replace="-1", value="*")
 		
-		Final_dfs_list.append(rslt)
+		finalDfs.append(rslt)
 
-		grade_levels(vs_obj, 0,Final_dfs_list)
+		grade_levels(vs_obj, 0,finalDfs)
 								
-def STAR_SGP(vs_obj, Final_dfs_list):
+def starSGP(vs_obj, finalDfs):
 	#STAR SGP
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 	
 	
     #for 23-24 only calculating 9-11
-	NewSTARFilter(vs_obj)
+	newSTARFilter(vs_obj)
 
-	#for previous cycles grade level filters were applied using the STARFilters(vs_obj) function
-	#STARFilters(vs_obj)
+	#for previous cycles grade level filters were applied using the starFilters(vs_obj) function
+	#starFilters(vs_obj)
 			
 	
 	if vs_obj.terms[0] == 'FA2022':
@@ -961,20 +961,20 @@ def STAR_SGP(vs_obj, Final_dfs_list):
 			rename[col]=temp_col
 	rslt.rename(columns=rename, inplace=True)
 	
-	Final_dfs_list.append(rslt)
+	finalDfs.append(rslt)
 
-	grade_levels(vs_obj, 0,Final_dfs_list)
+	grade_levels(vs_obj, 0,finalDfs)
 	
 	
-def STAR_SGP_Subgroups(vs_obj,Final_dfs_list):	
+def starSGPSubgroups(vs_obj,finalDfs):	
 	#SGP Race/Ethnicity
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 	
 	#for 23-24 only calculating 9-11
-	NewSTARFilter(vs_obj)
+	newSTARFilter(vs_obj)
 
-	#for previous cycles grade level filters were applied using the STARFilters(vs_obj) function
-	#STARFilters(vs_obj)
+	#for previous cycles grade level filters were applied using the starFilters(vs_obj) function
+	#starFilters(vs_obj)
 	
 	vs_obj.df=vs_obj.df.sort_values('CompletedDate').groupby('StudentIdentifier').tail(1)
 	
@@ -1067,7 +1067,7 @@ def STAR_SGP_Subgroups(vs_obj,Final_dfs_list):
 	
 	rslt=rslt.replace(to_replace="-1%", value="*").replace(to_replace="-1", value="*")
 	
-	Final_dfs_list.append(rslt)
+	finalDfs.append(rslt)
 	
 
 	vs_obj.df.loc[vs_obj.df['SPED'] =='ESN', 'SPED'] = 'Y'
@@ -1109,20 +1109,20 @@ def STAR_SGP_Subgroups(vs_obj,Final_dfs_list):
 		tf_subgroup=tf_subgroup.rename(columns = {'SGPPercentage': vs_obj.assessment_column+vs_obj.subjects[0]+"SGP"+" "+column.name+"_"+vs_obj.terms[0]})
 		tf_subgroup=tf_subgroup.replace(to_replace="-1%", value="*")
 
-		Final_dfs_list.append(tf_subgroup)
+		finalDfs.append(tf_subgroup)
 		
-def iReadyPP(vs_obj,Final_dfs_list):
+def iReadyPP(vs_obj,finalDfs):
 	#for Reading assessments, there was no need to filter for duplicates when students took a test in Spanish and English because there were no duplicates
 	#if vs_obj.terms[0] == 'W2022':
 		vs_obj.df=vs_obj.df[vs_obj.columns]
 		vs_obj.df=vs_obj.df[vs_obj.df['Most Recent Diagnostic (Y/N)'] =='Y']
 		vs_obj.df=vs_obj.df[vs_obj.df.Enrolled =='Enrolled']
 		if vs_obj.terms[0] == 'W2022':
-			WinterWindowFilter(vs_obj)
+			winterWindowFilter(vs_obj)
 		
 		if vs_obj.terms[0] == 'SP2023':
 			iReadyFilter(vs_obj)
-			SpringWindowFilter(vs_obj)
+			springWindowFilter(vs_obj)
 
 		vs_obj.df = vs_obj.df.replace(r'^\s*$', np.nan, regex=True)
 
@@ -1219,8 +1219,8 @@ def iReadyPP(vs_obj,Final_dfs_list):
 		
 		grade_lvl=pd.concat([grade_lvl, grade_lvl_dist])
 		
-		grade_lvl=GradeLevel_addColumns(vs_obj, grade_lvl)
-		GradeLevelTab.append(grade_lvl)
+		grade_lvl=gradeLevelAddColumns(vs_obj, grade_lvl)
+		gradeLevelTab.append(grade_lvl)
 
 
 		#Race iReady PP
@@ -1286,17 +1286,17 @@ def iReadyPP(vs_obj,Final_dfs_list):
 		idx_rename = {'':'District'}
 		rslt_race_Final = rslt_race_Final.rename(index=idx_rename)
 
-		Final_dfs_list.append(rslt_race_Final)
+		finalDfs.append(rslt_race_Final)
 		
-		subgroups(vs_obj,0, Final_dfs_list)
+		subgroups(vs_obj,0, finalDfs)
 
-def iReadyGradeLevel(vs_obj,Final_dfs_list):
+def iReadyGradeLevel(vs_obj,finalDfs):
 
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 
 	if (vs_obj.terms[0] =='W2022'):
 		iReadyFilter(vs_obj)
-		WinterWindowFilter(vs_obj)
+		winterWindowFilter(vs_obj)
 		vs_obj.df= vs_obj.df.replace(r'^\s*$', np.nan, regex=True)
 		
 	elif (vs_obj.terms[0] == 'FA2022'):
@@ -1306,7 +1306,7 @@ def iReadyGradeLevel(vs_obj,Final_dfs_list):
 	elif (vs_obj.terms[0] == 'SP2023'):
 		vs_obj.df=vs_obj.df[vs_obj.columns]
 		iReadyFilter(vs_obj)
-		SpringWindowFilter(vs_obj)
+		springWindowFilter(vs_obj)
 		
 		
 
@@ -1384,8 +1384,8 @@ def iReadyGradeLevel(vs_obj,Final_dfs_list):
 	
 	grade_lvl=pd.concat([grade_lvl, grade_lvl_dist])
 	
-	grade_lvl=GradeLevel_addColumns(vs_obj, grade_lvl)
-	GradeLevelTab.append(grade_lvl)
+	grade_lvl=gradeLevelAddColumns(vs_obj, grade_lvl)
+	gradeLevelTab.append(grade_lvl)
 	
 	#Race for District Totals
 	iR_GL_race=pd.crosstab([vs_obj.df['Race_Ethn']],[vs_obj.df['Overall Relative Placement']], values=vs_obj.df.Student_Number, aggfunc='count',margins=True)
@@ -1452,19 +1452,19 @@ def iReadyGradeLevel(vs_obj,Final_dfs_list):
 	
 		
 
-	Final_dfs_list.append(rslt)
-	Final_dfs_list.append(rslt_race_Final)
+	finalDfs.append(rslt)
+	finalDfs.append(rslt_race_Final)
 	
-	subgroups(vs_obj,0,Final_dfs_list)
+	subgroups(vs_obj,0,finalDfs)
 
-def iReadySpan(vs_obj, Final_dfs_list):
+def iReadySpan(vs_obj, finalDfs):
 	if 'SP2023' in vs_obj.terms[0]:
 		vs_obj.df=vs_obj.df[vs_obj.columns]
 		vs_obj.df=vs_obj.df.reset_index()	
 		vs_obj.df=vs_obj.df[vs_obj.df.Enrolled =='Enrolled']
 		vs_obj.df.replace(r'^\s*$', np.nan, regex=True)
 		vs_obj.df=vs_obj.df[vs_obj.df['Window'] =='End of Year']
-		SpringWindowFilter(vs_obj)
+		springWindowFilter(vs_obj)
 		
 		
 		rslt_count=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df["Overall Spanish Placement"]], values=vs_obj.df["Overall Spanish Placement"], aggfunc='count', margins=True, margins_name='All')
@@ -1499,10 +1499,10 @@ def iReadySpan(vs_obj, Final_dfs_list):
 		grade_lvl.index.name='School_Short'
 		
 	
-		grade_lvl=GradeLevel_addColumns(vs_obj, grade_lvl)
-		GradeLevelTab.append(grade_lvl)
+		grade_lvl=gradeLevelAddColumns(vs_obj, grade_lvl)
+		gradeLevelTab.append(grade_lvl)
 
-		Final_dfs_list.append(rslt)
+		finalDfs.append(rslt)
 
 
 		#subgroups
@@ -1551,16 +1551,16 @@ def iReadySpan(vs_obj, Final_dfs_list):
 			sub_rslt.loc[sub_rslt.index[-1], 'School_Short']='District'
 			sub_rslt=sub_rslt.set_index('School_Short')
 			
-			Final_dfs_list.append(sub_rslt)
+			finalDfs.append(sub_rslt)
 
 	
-def iReady_Grw(vs_obj,Final_dfs_list):
+def iReadyGrw(vs_obj,finalDfs):
 	vs_obj.df=vs_obj.df[vs_obj.df['Baseline Diagnostic (Y/N)'] =='N']
 
 	if 'W2022' in vs_obj.terms[0]:
 		vs_obj.df=vs_obj.df[vs_obj.columns]
 
-		WinterWindowFilter(vs_obj)
+		winterWindowFilter(vs_obj)
 		vs_obj.df=vs_obj.df[vs_obj.df['Most Recent Diagnostic (Y/N)'] =='Y']
 		vs_obj.df=vs_obj.df[vs_obj.df.Enrolled =='Enrolled']
 		vs_obj.df = vs_obj.df.replace(r'^\s*$', np.nan, regex=True)
@@ -1570,7 +1570,7 @@ def iReady_Grw(vs_obj,Final_dfs_list):
 	if 'SP2023' in vs_obj.terms[0]:
 		vs_obj.df=vs_obj.df[vs_obj.columns]
 		iReadyFilter(vs_obj)
-		SpringWindowFilter(vs_obj)
+		springWindowFilter(vs_obj)
 		grw_column = 'Percent Progress to Annual Typical Growth (%)'
 
 
@@ -1607,8 +1607,8 @@ def iReady_Grw(vs_obj,Final_dfs_list):
 
 	GRW_GradeLevel= GRW_GradeLevel.astype(str)+"%"
 	GRW_GradeLevel=GRW_GradeLevel.replace(to_replace="*%",value = "*").replace(to_replace="nan%", value="")
-	GRW_GradeLevel=GradeLevel_addColumns(vs_obj, GRW_GradeLevel)
-	GradeLevelTab.append(GRW_GradeLevel)
+	GRW_GradeLevel=gradeLevelAddColumns(vs_obj, GRW_GradeLevel)
+	gradeLevelTab.append(GRW_GradeLevel)
 	
 	
 
@@ -1662,7 +1662,7 @@ def iReady_Grw(vs_obj,Final_dfs_list):
 	
 	Final=Final.reset_index()
 	
-	Final_dfs_list.append(Final)
+	finalDfs.append(Final)
 	
 
 	#GRW Subgroups
@@ -1751,15 +1751,15 @@ def iReady_Grw(vs_obj,Final_dfs_list):
 				sub_rslt=pd.concat([sub_rslt, dist_total], axis=0)
 				sub_rslt=sub_rslt.replace(to_replace="*%", value="*")
 				print(sub_rslt)
-				Final_dfs_list.append(sub_rslt)
+				finalDfs.append(sub_rslt)
 	
 	
 	
 
-def STAR_DB(vs_obj,Final_dfs_list):
+def starDB(vs_obj,finalDfs):
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 
-	STARFilters(vs_obj)
+	starFilters(vs_obj)
 	vs_obj.df=vs_obj.df.sort_values('CompletedDate').groupby('Student_Number').tail(1)
 	vs_obj.df=vs_obj.df[vs_obj.df.AssessmentStatus =='Active']
 	
@@ -1804,8 +1804,8 @@ def STAR_DB(vs_obj,Final_dfs_list):
 	grade_lvl = pd.concat([grade_lvl, dist_grade_lvl_DB])
 	grade_lvl.index.name='School_Short'
 	
-	grade_lvl=GradeLevel_addColumns(vs_obj, grade_lvl)
-	GradeLevelTab.append(grade_lvl)
+	grade_lvl=gradeLevelAddColumns(vs_obj, grade_lvl)
+	gradeLevelTab.append(grade_lvl)
 	
 
 	rslt_race_count=pd.crosstab([vs_obj.df.School_Short, vs_obj.df.Race_Ethn],[vs_obj.df.DistrictBenchmarkCategoryName], values=vs_obj.df.Student_Number, aggfunc='count',margins=True, margins_name='All')
@@ -1882,12 +1882,12 @@ def STAR_DB(vs_obj,Final_dfs_list):
 	
 	rslt_race = pd.concat([rslt_race, dist_race])
 	
-	Final_dfs_list.append(rslt_race)	
+	finalDfs.append(rslt_race)	
 	
 	
-	subgroups(vs_obj,0,Final_dfs_list)
+	subgroups(vs_obj,0,finalDfs)
 
-def new_function_subgroups(vs_obj, metric_column_index, subgroup_count, column):
+def newSubgroups(vs_obj, metric_column_index, subgroup_count, column):
 		if vs_obj.metrics[metric_column_index] == 'SGP':
 			pass
 		else:
@@ -1953,22 +1953,22 @@ def new_function_subgroups(vs_obj, metric_column_index, subgroup_count, column):
 
 		return(subgroup_count)
 	
-def subgroups(vs_obj, metric_column_index, Final_dfs_list):
+def subgroups(vs_obj, metric_column_index, finalDfs):
 	
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 	
 	if (vs_obj.assessment_type == 'STAR') or (vs_obj.assessment_type == 'SEL'):
-		STARFilters(vs_obj)
+		starFilters(vs_obj)
 
 	if vs_obj.assessment_type == 'ChrAbs':
 		vs_obj.df=vs_obj.df[vs_obj.df['studentStatus'] =='Active']
 
 	if vs_obj.assessment_type == 'iReady':
 		if vs_obj.terms[0] == 'W2022':
-			WinterWindowFilter(vs_obj)
+			winterWindowFilter(vs_obj)
 
 		elif vs_obj.terms[0] == 'SP2023':
-			SpringWindowFilter(vs_obj)
+			springWindowFilter(vs_obj)
 			iReadyFilter(vs_obj)
 
 		vs_obj.df[vs_obj.df['Most Recent Diagnostic (Y/N)'] =='Y']
@@ -1992,29 +1992,29 @@ def subgroups(vs_obj, metric_column_index, Final_dfs_list):
 		grd_lvl_count=pd.crosstab([vs_obj.df['Grade Level']],[column,vs_obj.df[vs_obj.columns[metric_column_index]]], 
 							values=vs_obj.df.Student_Number, aggfunc='count',margins=True, margins_name='All')
 		
-		subgroupFinal=new_function_subgroups(vs_obj,0, subgroup_count, column)
+		subgroupFinal=newSubgroups(vs_obj,0, subgroup_count, column)
 		subgroupFinal = subgroupFinal.iloc[: , [0,-1]].copy()
 		subgroupFinal = subgroupFinal.T.drop_duplicates().T
 		
-		Final_dfs_list.append(subgroupFinal)
+		finalDfs.append(subgroupFinal)
 
 		if vs_obj.assessment_type in ('STAR', 'SEL', 'iReady', 'ESGI'):
-			SupesTabFinal=new_function_subgroups(vs_obj,0, grd_lvl_count, column)
+			SupesTabFinal=newSubgroups(vs_obj,0, grd_lvl_count, column)
 			SupesTabFinal = SupesTabFinal.iloc[: , [0,-1]].copy()
  		
 
-			SupesGoalsTab.append(SupesTabFinal)
+			supesGoalsTab.append(SupesTabFinal)
 		
 
 
-GradeLevelTab=[]		
-def grade_levels(vs_obj, metric_column_index, Final_dfs_list):
+gradeLevelTab=[]		
+def grade_levels(vs_obj, metric_column_index, finalDfs):
 	print("WORKING on GRADE LEVEL TAB FOR: ", vs_obj.assessment_type, vs_obj.subjects[0],vs_obj.terms[0])
 	
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 	
 	if vs_obj.assessment_type == 'STAR' or vs_obj.assessment_type == 'SEL':
-		STARFilters(vs_obj)
+		starFilters(vs_obj)
 		
 	#grade level calculations
 	
@@ -2081,13 +2081,13 @@ def grade_levels(vs_obj, metric_column_index, Final_dfs_list):
 		grade_lvl.index.name='School_Short'
 		
 
-	grade_lvl=GradeLevel_addColumns(vs_obj, grade_lvl)
+	grade_lvl=gradeLevelAddColumns(vs_obj, grade_lvl)
 	grade_lvl=grade_lvl.drop(columns='')
-	GradeLevelTab.append(grade_lvl)
+	gradeLevelTab.append(grade_lvl)
 	
-	#Final_dfs_list.append(grade_lvl)
+	#finalDfs.append(grade_lvl)
 	
-def DI(vs_obj,Final_dfs_list):
+def disIndx(vs_obj,finalDfs):
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 	vs_obj.df = vs_obj.df.replace(r'^\s*$', np.nan, regex=True)
 	vs_obj.df['African American DI']=vs_obj.df['African American DI'].replace(to_replace="nan",value="")
@@ -2104,10 +2104,10 @@ def DI(vs_obj,Final_dfs_list):
 	
 	vs_obj.df.reset_index()
 	
-	Final_dfs_list.append(vs_obj.df)
+	finalDfs.append(vs_obj.df)
 
 
-def SuspRte(vs_obj,Final_dfs_list):
+def suspRte(vs_obj,finalDfs):
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 
 	enroll={'American Indian':'Ai E'
@@ -2140,22 +2140,22 @@ def SuspRte(vs_obj,Final_dfs_list):
 	vs_obj.df=vs_obj.df.replace(to_replace="-",value="").replace(to_replace=-1,value="*").replace(to_replace="-%",value="")
 	vs_obj.df.reset_index()
 	
-	Final_dfs_list.append(vs_obj.df)
+	finalDfs.append(vs_obj.df)
 	
-def SAEBRS(vs_obj,Final_dfs_list):
+def saebrsScreener(vs_obj,finalDfs):
 	vs_obj.df=vs_obj.df.rename(columns={'Percent Complete':'SAEBRSparticipation ALL_FA2022'})
-	Final_dfs_list.append(vs_obj.df)
+	finalDfs.append(vs_obj.df)
 	
 
 
 
-def SupesGoals(vs_obj):
+def supesGoals(vs_obj):
 	idx_rename = {'All':'District'} 
 	
 	#STAR SB calculations - Did Literacy for Supes Goals, then added Math for Assessment Summaries.
 	#if (vs_obj.assessment_type == 'STAR') and (vs_obj.metrics[0] == 'SB') and ('math' in vs_obj.subjects):
 	if (vs_obj.assessment_type == 'STAR') and (vs_obj.metrics[0] == 'SB') and ('read' in vs_obj.subjects):
-		STARFilters(vs_obj)
+		starFilters(vs_obj)
 		vs_obj.df=vs_obj.df.sort_values('CompletedDate').groupby('Student_Number').tail(1)
 		vs_obj.df=vs_obj.df[vs_obj.df.AssessmentStatus =='Active']
 
@@ -2223,10 +2223,10 @@ def SupesGoals(vs_obj):
 		supes_race=pd.concat([supes_race, supes], axis=1)
 		supes_race=supes_race.drop(columns=[''])
 		#supes_race=supes_race.index.rename("Grade Level")
-		SupesGoalsTab.append(supes_race)
+		supesGoalsTab.append(supes_race)
 		
 	
-		SupeGoals_GrdLvlSubgrps(vs_obj, 0)
+		supeGoalsGrdLvlSubgrps(vs_obj, 0)
 		
 	
 
@@ -2236,11 +2236,11 @@ def SupesGoals(vs_obj):
 		iReadyFilter(vs_obj)
 	
 		if vs_obj.terms[0] == 'W2022':
-			WinterWindowFilter(vs_obj)
+			winterWindowFilter(vs_obj)
 		
 
 		if vs_obj.terms[0] == 'SP2023':
-			SpringWindowFilter(vs_obj)
+			springWindowFilter(vs_obj)
 
 		vs_obj.df = vs_obj.df.replace(r'^\s*$', np.nan, regex=True)
 		supesiReadyGL_count=pd.crosstab([vs_obj.df['Grade Level']],[vs_obj.df['Overall Relative Placement']], values=vs_obj.df.Student_Number, aggfunc='count',margins=True)
@@ -2285,9 +2285,9 @@ def SupesGoals(vs_obj):
 		supesiReadyGL=supesiReadyGL.drop(columns=[''])
 
 		
-		SupesGoalsTab.append(supesiReadyGL)
+		supesGoalsTab.append(supesiReadyGL)
 		
-		SupeGoals_GrdLvlSubgrps(vs_obj, 0)
+		supeGoalsGrdLvlSubgrps(vs_obj, 0)
 		
 	elif (vs_obj.assessment_type == 'ESGI') :
 		metrics = ['WCCUSD Uppercase Letters (PLF R 3.2)','WCCUSD Lowercase Letters (PLF R 3.2)', 'WCCUSD Number Recognition 0-12 (PLF NS 1.2)']
@@ -2345,13 +2345,13 @@ def SupesGoals(vs_obj):
 			ESGI_race=ESGI_race.reset_index()
 			
 			
-			SupesGoalsTab.append(MetEOYBenchmark)
-			SupesGoalsTab.append(ESGI_race)
+			supesGoalsTab.append(MetEOYBenchmark)
+			supesGoalsTab.append(ESGI_race)
 			
-		SupeGoals_GrdLvlSubgrps(vs_obj, 0)
+		supeGoalsGrdLvlSubgrps(vs_obj, 0)
 			
 	elif vs_obj.assessment_type == 'SEL':
-		STARFilters(vs_obj)
+		starFilters(vs_obj)
 		
 		vs_obj.df=vs_obj.df.sort_values('CompletedDate').groupby('Student_Number').tail(1)
 		vs_obj.df=vs_obj.df[vs_obj.df.AssessmentStatus =='Active']
@@ -2390,20 +2390,20 @@ def SupesGoals(vs_obj):
 		SELDB_race=pd.concat([SELDB_race, dist_grade_lvl_DB],axis=1)
 		SELDB_race=SELDB_race.rename(columns={'District':"SEL_DB ALL "+vs_obj.terms[0]})
 		
-		SupesGoalsTab.append(SELDB_race)
-		SupeGoals_GrdLvlSubgrps(vs_obj, 0)
+		supesGoalsTab.append(SELDB_race)
+		supeGoalsGrdLvlSubgrps(vs_obj, 0)
 
 
-def SupeGoals_GrdLvlSubgrps(vs_obj, metric_column_index):
+def supeGoalsGrdLvlSubgrps(vs_obj, metric_column_index):
 	if (vs_obj.assessment_type == 'iReady') and (vs_obj.terms[0] == 'W2022'):
 				vs_obj.df=vs_obj.df[vs_obj.df['Most Recent Diagnostic (Y/N)'] =='Y']
 				vs_obj.df=vs_obj.df[vs_obj.df.Enrolled =='Enrolled']
-				WinterWindowFilter(vs_obj)
+				winterWindowFilter(vs_obj)
 				vs_obj.df = vs_obj.df.replace(r'^\s*$', np.nan, regex=True)
 
 	if (vs_obj.assessment_type == 'iReady') and (vs_obj.terms[0] == 'SP2023'):
 		iReadyFilter(vs_obj)
-		SpringWindowFilter(vs_obj)
+		springWindowFilter(vs_obj)
 		vs_obj.df = vs_obj.df.replace(r'^\s*$', np.nan, regex=True)
 
 	
@@ -2413,7 +2413,7 @@ def SupeGoals_GrdLvlSubgrps(vs_obj, metric_column_index):
 		vs_obj.df=vs_obj.df[vs_obj.df.AssessmentStatus =='Active']		
 
 	if (vs_obj.assessment_type == 'SEL') and (vs_obj.terms[0] == 'SP2023'):
-		STARFilters(vs_obj)	
+		starFilters(vs_obj)	
 	
 	
 	if (vs_obj.assessment_type == 'ESGI') :
@@ -2453,7 +2453,7 @@ def SupeGoals_GrdLvlSubgrps(vs_obj, metric_column_index):
 				GrdLvlSubgps=GrdLvlSubgps.rename(columns={'Y %': metric+" "+column.name+" "+vs_obj.terms[0],'Grade Level_y':'Grade Level'})
 				
 				
-				SupesGoalsTab.append(GrdLvlSubgps)
+				supesGoalsTab.append(GrdLvlSubgps)
 
 	
 	if ('read' in vs_obj.subjects)  or ('EarlyLit' in vs_obj.subjects) or ('SpEarlyLit' in vs_obj.subjects):
@@ -2473,7 +2473,7 @@ def SupeGoals_GrdLvlSubgrps(vs_obj, metric_column_index):
 			
 			GrdLvlSubgps.fillna(0)
 			if (vs_obj.assessment_type == 'STAR') or (vs_obj.assessment_type == 'SEL'):
-				STARFilters(vs_obj)
+				starFilters(vs_obj)
 			
 			
 			GrdLvlSubgps=GrdLvlSubgps.rename(columns = {'Yes':'Y','At/Above Benchmark':'Y', 'Y':'Y','Severe&Chronic':'Y'})
@@ -2496,11 +2496,11 @@ def SupeGoals_GrdLvlSubgrps(vs_obj, metric_column_index):
 			
 			GrdLvlSubgps=GrdLvlSubgps[['Grade Level', column.name, 'Y %']]
 			GrdLvlSubgps=GrdLvlSubgps.rename(columns={'Y %':vs_obj.assessment_type+"_"+vs_obj.subjects[0]+" "+column.name+" "+vs_obj.terms[0],'Grade Level_y':'Grade Level'})
-			SupesGoalsTab.append(GrdLvlSubgps)
+			supesGoalsTab.append(GrdLvlSubgps)
 
 
 
-def createGradeLevelTab(GradeLeveLTab):
+def createGradeLevelTab(gradeLevelTab):
 
 	GL_dfs = [df.replace(to_replace="*%",value="*").replace(to_replace=-1,value="*") for df in GradeLevelTab]
 	
@@ -2515,7 +2515,7 @@ def createGradeLevelTab(GradeLeveLTab):
 	worksheet = sheet.add_worksheet("Grade Level Tab"+dt_string, rows = 1000, cols=500)
 	set_with_dataframe(worksheet,GLs_concatenated,1,1,include_index=True)
 
-def createSupesGoalsTab(SupesGoalsTab):
+def createSupesGoalsTab(supesGoalsTab):
 	
 	SupesGoals_dfs=[df.reset_index().set_index('Grade Level').replace(to_replace="*%",value="*").replace(to_replace=-1,value="*") for df in SupesGoalsTab]
 	SupesGoals_concatenated=pd.concat(SupesGoals_dfs, axis=1)
@@ -2528,9 +2528,9 @@ def createSupesGoalsTab(SupesGoalsTab):
 	worksheet = sheet.add_worksheet("Supes Goals Tab"+dt_string, rows = 1000, cols=500)
 	set_with_dataframe(worksheet,SupesGoals_concatenated,1,1,include_index=True)
 
-def createVitalSignsTab(Final_dfs_list):
+def createVitalSignsTab(finalDfs):
 	
-	dfs = [df.reset_index().set_index('School_Short').replace(to_replace="*%",value="*").replace(to_replace=-1,value="*") for df in Final_dfs_list]
+	dfs = [df.reset_index().set_index('School_Short').replace(to_replace="*%",value="*").replace(to_replace=-1,value="*") for df in finalDfs]
 
 	concatenated=pd.concat(dfs, axis=1)
 
