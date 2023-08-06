@@ -37,9 +37,7 @@ class VitalSignsDataframe(object):
 				
 
 assessmentsDFs={}
-
 supesGoalsTab=[]
-
 
 def magicDF(assessment_type):
 	if assessment_type in assessmentsDFs:
@@ -236,7 +234,6 @@ def winterWindowFilter(vs_obj):
 		mask = (vs_obj.df['Completion Date'] >= '2023-01-18') & (vs_obj.df['Completion Date'] <= '2023-02-17')
 		vs_obj.df=vs_obj.df.loc[mask]
 
-
 def springWindowFilter(vs_obj):
 	if 'ScreeningPeriodWindowName' in vs_obj.df.columns:
 		vs_obj.df=vs_obj.df.loc[(vs_obj.df['ScreeningPeriodWindowName'] == 'Spring')]
@@ -253,13 +250,12 @@ def iReadyFilter(vs_obj):
 	vs_obj.df.replace(r'^\s*$', np.nan, regex=True)
 	if vs_obj.subjects[0] == 'math':
 		vs_obj.df=vs_obj.df[vs_obj.df['Grade Level'].isin(['0.0','0.1','2.0','3.0','4.0','5.0','6.0','7.0','8.0'])]
-		
 	if vs_obj.subjects[0] == 'read':
 		vs_obj.df=vs_obj.df[vs_obj.df['Grade Level'].isin(['0.0','0.1','2.0','3.0','4.0','5.0','6.0','7.0','8.0'])]
 
-def gradeLevelAddColumns(vs_obj, grade_lvl_df):
-	idx_rename = {'All':'District'} 
-	grade_lvl_df = grade_lvl_df.rename(index=idx_rename)
+def gradeLevelAddColumns(vs_obj, grdLvl_df):
+	idxRename = {'All':'District'} 
+	grdLvl_df = grdLvl_df.rename(index=idxRename)
 	assessment_name=vs_obj.assessment_type+" "+vs_obj.subjects[0].title()
 	measure=vs_obj.metrics[0]
 	cycle=vs_obj.terms[0]
@@ -290,10 +286,10 @@ def gradeLevelAddColumns(vs_obj, grade_lvl_df):
 		measure = 'Overall Spanish Placement'
 
 	
-	grade_lvl_df.insert(0,"Cycle",[cycle]*len(grade_lvl_df))
-	grade_lvl_df.insert(0,"Measure",[measure]*len(grade_lvl_df))
-	grade_lvl_df.insert(0,"Assessment",[assessment_name]*len(grade_lvl_df))
-	return(grade_lvl_df)
+	grdLvl_df.insert(0,"Cycle",[cycle]*len(grdLvl_df))
+	grdLvl_df.insert(0,"Measure",[measure]*len(grdLvl_df))
+	grdLvl_df.insert(0,"Assessment",[assessment_name]*len(grdLvl_df))
+	return(grdLvl_df)
 
 def mergeDemos(df_assessment, dfDemos):
 	return(pd.merge(df_assessment, dfDemos, how="left", on='Student_Number'))
@@ -307,7 +303,6 @@ def codifySchoolnames(df_assessment):
 
 
 def starFilters(vs_obj):
-
 		if vs_obj.terms[0] == 'FA2022':
 			vs_obj.df=vs_obj.df.loc[(vs_obj.df['ScreeningPeriodWindowName'] == 'Fall') | (vs_obj.df['ScreeningPeriodWindowName'] == 'Round 1')]
 		if vs_obj.terms[0] == 'W2022':
@@ -342,15 +337,12 @@ def newSTARFilter(vs_obj):
 	
 		vs_obj.df=vs_obj.df[vs_obj.df['CurrentGrade'].isin([9,10,11])]
 		
-		
-
 def chronicAbs(vs_obj, metric_column_index,finalDfs):
-	
 	vs_obj.df=vs_obj.df[vs_obj.df['studentStatus'] =='Active']
 	rslt=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df['absCategory']], 
 						values=vs_obj.df.Student_Number, aggfunc='count',margins=True,normalize='index').mul(100).round(1)
-	idx_rename = {'All':'District'} 
-	rslt = rslt.rename(index=idx_rename)
+	idxRename = {'All':'District'} 
+	rslt = rslt.rename(index=idxRename)
 	rslt=rslt.rename(columns={'CHRONIC':'Chronic','SEVERE CHRONIC':'Severe'})
 	rslt['Chronic&Severe']=rslt.Chronic + rslt.Severe
 	rslt['Chronic&Severe']=rslt['Chronic&Severe'].round(1).astype(str)+"%"
@@ -361,8 +353,8 @@ def chronicAbs(vs_obj, metric_column_index,finalDfs):
 	#Grade Level
 	rslt_GL=pd.crosstab([vs_obj.df.School_Short,vs_obj.df['Grade Level']],vs_obj.df['absCategory'], 
 						values=vs_obj.df.Student_Number, aggfunc='count',margins=True,normalize='index').mul(100).round(1)
-	idx_rename = {'All':'District'} 
-	rslt_GL = rslt_GL.rename(index=idx_rename)
+	idxRename = {'All':'District'} 
+	rslt_GL = rslt_GL.rename(index=idxRename)
 
 	rslt_GL=rslt_GL.rename(columns={'CHRONIC':'Chronic','SEVERE CHRONIC':'Severe'})
 	rslt_GL['Chronic&Severe']=rslt_GL.Chronic + rslt_GL.Severe
@@ -378,89 +370,85 @@ def chronicAbs(vs_obj, metric_column_index,finalDfs):
 							values='Chronic&Severe')
 	rslt_GL=rslt_GL.replace(to_replace="*%",value="*").replace(to_replace="nan%",value="")
 	
-	grade_lvl=gradeLevelAddColumns(vs_obj, rslt_GL)
-	gradeLevelTab.append(grade_lvl)
+	grdLvl=gradeLevelAddColumns(vs_obj, rslt_GL)
+	gradeLevelTab.append(grdLvl)
 	
 	
 	#Race
-	rslt_race=pd.crosstab([vs_obj.df.School_Short, vs_obj.df.Race_Ethn],[vs_obj.df.absCategory], 
+	rsltRace=pd.crosstab([vs_obj.df.School_Short, vs_obj.df.Race_Ethn],[vs_obj.df.absCategory], 
 						values=vs_obj.df.Student_Number, aggfunc='count',margins=True)
-	rslt_race=rslt_race.rename(index=idx_rename)
+	rsltRace=rsltRace.rename(index=idxRename)
 
 	
-	rslt_race_perc=pd.crosstab([vs_obj.df.School_Short, vs_obj.df.Race_Ethn],[vs_obj.df.absCategory], 
+	rsltRacePerc=pd.crosstab([vs_obj.df.School_Short, vs_obj.df.Race_Ethn],[vs_obj.df.absCategory], 
 						values=vs_obj.df.Student_Number, aggfunc='count',margins=True,normalize='index')
 	
-	rslt_race_perc=rslt_race_perc.rename(index=idx_rename)
-	rslt_race_perc=rslt_race_perc.rename(columns={'CHRONIC':'Chronic','SEVERE CHRONIC':'Severe'})				
-	rslt_race_perc['Chronic&Severe']=rslt_race_perc.Chronic + rslt_race_perc.Severe
-	rslt_race['Chronic&SeverePerc']=rslt_race_perc['Chronic&Severe'].mul(100).round(1)
-	rslt_race['Chronic&SeverePerc'] = np.where((rslt_race['All']) <= 10,-1,rslt_race['Chronic&SeverePerc'])
+	rsltRacePerc=rsltRacePerc.rename(index=idxRename)
+	rsltRacePerc=rsltRacePerc.rename(columns={'CHRONIC':'Chronic','SEVERE CHRONIC':'Severe'})				
+	rsltRacePerc['Chronic&Severe']=rsltRacePerc.Chronic + rsltRacePerc.Severe
+	rsltRace['Chronic&SeverePerc']=rsltRacePerc['Chronic&Severe'].mul(100).round(1)
+	rsltRace['Chronic&SeverePerc'] = np.where((rsltRace['All']) <= 10,-1,rsltRace['Chronic&SeverePerc'])
 
-	rslt_race=rslt_race.reset_index()
-	rslt_race['Chronic&SeverePerc']=rslt_race['Chronic&SeverePerc'].astype(str)+"%"		
-	rslt_race=rslt_race.pivot(index='School_Short',
+	rsltRace=rsltRace.reset_index()
+	rsltRace['Chronic&SeverePerc']=rsltRace['Chronic&SeverePerc'].astype(str)+"%"		
+	rsltRace=rsltRace.pivot(index='School_Short',
 							columns='Race_Ethn',
 							values='Chronic&SeverePerc')
 	
-	rslt_race=rslt_race.replace(to_replace="-1.0%",value="*").replace(to_replace="nan%",value="")
+	rsltRace=rsltRace.replace(to_replace="-1.0%",value="*").replace(to_replace="nan%",value="")
 	
 	rename={}
 	races={'African_American':'AA', 'American_Indian':'AI','Asian':'A', 'Filipino':'F', 'Hispanic':'HL', 'Mult':'Mult',
        'Pac_Islander':'PI', 'White':'W'}
-	for col in rslt_race.columns:
+	for col in rsltRace.columns:
 		if col in races.keys():
 			temp_col = vs_obj.assessment_type+" "+races[col]+"_"+vs_obj.terms[0]
 			rename[col]=temp_col
 			
-	rslt_race.rename(columns=rename, inplace=True)
-	rslt_race=rslt_race.drop(index='District').drop(columns='')
+	rsltRace.rename(columns=rename, inplace=True)
+	rsltRace=rsltRace.drop(index='District').drop(columns='')
 	
-	dst_race=pd.crosstab([vs_obj.df.Race_Ethn], [vs_obj.df.absCategory],
+	dstRace=pd.crosstab([vs_obj.df.Race_Ethn], [vs_obj.df.absCategory],
 						values=vs_obj.df.Student_Number, aggfunc='count',normalize='index')
-	dst_race=dst_race.rename(columns={'CHRONIC':'Chronic','SEVERE CHRONIC':'Severe'})				
-	dst_race['Chronic&Severe']=dst_race.Chronic + dst_race.Severe
-	dst_race['Chronic&Severe']=dst_race['Chronic&Severe'].mul(100).round(1)
+	dstRace=dstRace.rename(columns={'CHRONIC':'Chronic','SEVERE CHRONIC':'Severe'})				
+	dstRace['Chronic&Severe']=dstRace.Chronic + dstRace.Severe
+	dstRace['Chronic&Severe']=dstRace['Chronic&Severe'].mul(100).round(1)
 	
 
-	dst_race['Chronic&Severe']=dst_race['Chronic&Severe'].astype(str)+"%"
+	dstRace['Chronic&Severe']=dstRace['Chronic&Severe'].astype(str)+"%"
 	
 	dropped=['Excellent', 'Manageable','Satisfactory','Chronic', 'Severe']
-	for col in dst_race.columns:
+	for col in dstRace.columns:
 		if col in dropped:
-			dst_race=dst_race.drop(columns=col)
+			dstRace=dstRace.drop(columns=col)
 
-	dst_race=dst_race.T
+	dstRace=dstRace.T
 	i_rename = {'Chronic&Severe':'District'} 
-	dst_race = dst_race.rename(index=i_rename)
+	dstRace = dstRace.rename(index=i_rename)
 	
 	rename={}
 	races={'':'_','absCategory':'School_Short','African_American':'AA', 'American_Indian':'AI','Asian':'A', 'Filipino':'F', 'Hispanic':'HL', 'Mult':'Mult',
        'Pac_Islander':'PI', 'White':'W'}
-	for col in dst_race.columns:
+	for col in dstRace.columns:
 		if col in races.keys():
 			temp_col = vs_obj.assessment_type+" "+races[col]+"_"+vs_obj.terms[0]
 			rename[col]=temp_col
 	
-	dst_race.index.rename('School_Short', inplace=True)
-	dst_race=dst_race.reset_index().set_index('School_Short')
-	dst_race.rename(columns=rename, inplace=True)
-	dst=dst_race.iloc[-1:, : ]
+	dstRace.index.rename('School_Short', inplace=True)
+	dstRace=dstRace.reset_index().set_index('School_Short')
+	dstRace.rename(columns=rename, inplace=True)
+	dst=dstRace.iloc[-1:, : ]
 	
-
-	rslt_race=pd.concat([rslt_race,dst])
-	rslt_race=rslt_race.reset_index().set_index('School_Short')
+	rsltRace=pd.concat([rsltRace,dst])
+	rsltRace=rsltRace.reset_index().set_index('School_Short')
 	rslt=rslt[['ChrAbs ALL_SP2023']]
 	
-	#rslt_race=pd.concat([rslt, rslt_race])
-
 	finalDfs.append(rslt)
-	finalDfs.append(rslt_race)
+	finalDfs.append(rsltRace)
 	
 	subgroups(vs_obj,0,finalDfs)					
 
 def ESGI(vs_obj, finalDfs):
-	
 	test_names=['WCCUSD Uppercase Letters (PLF R 3.2)','WCCUSD Number Recognition 0-12 (PLF NS 1.2)','WCCUSD Lowercase Letters (PLF R 3.2)']
 	names={'WCCUSD Uppercase Letters (PLF R 3.2)':'UppCaseLet3','WCCUSD Number Recognition 0-12 (PLF NS 1.2)':'NumRec3','WCCUSD Lowercase Letters (PLF R 3.2)':'LowCaseLet'}
 	for test_name in test_names:
@@ -469,15 +457,12 @@ def ESGI(vs_obj, finalDfs):
 		MetEOYBenchmark=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df['Test Name'],vs_obj.df['Met EOY Benchmark']],values=vs_obj.df.Student_Number, 
 							margins=True, aggfunc='count')
 	
-
-		idx_rename = {'All':'District'} 
-		MetEOYBenchmark = MetEOYBenchmark.rename(index=idx_rename)
+		idxRename = {'All':'District'} 
+		MetEOYBenchmark = MetEOYBenchmark.rename(index=idxRename)
 		MetEOYBenchmark.columns=['_'.join(col) for col in MetEOYBenchmark.columns.values]
 		MetEOYBenchmark=MetEOYBenchmark.fillna(0)
 		col_y = test_name +'_Y'
-		
 		col_f = test_name +'_FALSE'
-		
 		total = MetEOYBenchmark[col_y]+MetEOYBenchmark[col_f]
 		MetEOYBenchmark['PercentageMetEOYBenchmark']=(MetEOYBenchmark[col_y]/total).mul(100).round(1)
 		MetEOYBenchmark['PercentageMetEOYBenchmark'] = np.where((total) <= 10,'*',MetEOYBenchmark['PercentageMetEOYBenchmark'])
@@ -490,7 +475,6 @@ def ESGI(vs_obj, finalDfs):
 		MetEOYBenchmark=MetEOYBenchmark.rename(columns = {'PercentageMetEOYBenchmark': vs_obj.assessment_type+"_"+name+" ALL_"+vs_obj.terms[0]})
 		MetEOYBenchmark=MetEOYBenchmark.set_index('School_Short')
 		
-	
 		finalDfs.append(MetEOYBenchmark)
 		
 		#GradeLevel Tab
@@ -499,19 +483,15 @@ def ESGI(vs_obj, finalDfs):
 		ESGI_GL=pd.crosstab([new['School_Short'],new['Grade Level_y']],[new['Met EOY Benchmark']],values=vs_obj.df.Student_Number, 
 							margins=True, aggfunc='count')
 
-		idx_rename = {'All':'District'} 
-		ESGI_GL = ESGI_GL.rename(index=idx_rename)
+		idxRename = {'All':'District'} 
+		ESGI_GL = ESGI_GL.rename(index=idxRename)
 		ESGI_GL=ESGI_GL.fillna(0)
 		ESGI_GL['PercentageMetEOYBenchmark']=(ESGI_GL['Y']/ESGI_GL['All']).mul(100).round(1)
 		ESGI_GL['PercentageMetEOYBenchmark'] = np.where((ESGI_GL['All']) <= 10,'*',ESGI_GL['PercentageMetEOYBenchmark'])
 		ESGI_GL['PercentageMetEOYBenchmark'] = ESGI_GL['PercentageMetEOYBenchmark'].astype(str)+"%"
 		ESGI_GL=ESGI_GL.replace(to_replace="*%", value="*").reset_index()
-		
-
 		ESGI_GL=ESGI_GL.rename(columns={'Grade Level_y':'Grade Level', 'Test Name': 'School_Short'})#,'PercentageMetEOYBenchmark': test_name+" "+vs_obj.terms[0]})
-		print(ESGI_GL)
-		quit()
-
+		
 		drop_cols=['FALSE','Y','All','']
 		ESGI_GL=ESGI_GL.pivot(index='School_Short',
 								columns='Grade Level',
@@ -521,16 +501,14 @@ def ESGI(vs_obj, finalDfs):
 			if col in drop_cols:
 				ESGI_GL=ESGI_GL.drop(columns=col)
 
-
-		idx_rename = {'All':'District'} 
-		ESGI_GL = ESGI_GL.rename(index=idx_rename)
+		idxRename = {'All':'District'} 
+		ESGI_GL = ESGI_GL.rename(index=idxRename)
 		assessment_name=vs_obj.assessment_type+" "+vs_obj.subjects[0].title()
 		measure=test_name
 		cycle=vs_obj.terms[0]
 		ESGI_GL.insert(0,"Cycle",[cycle]*len(ESGI_GL))
 		ESGI_GL.insert(0,"Measure",[measure]*len(ESGI_GL))
 		ESGI_GL.insert(0,"Assessment",[assessment_name]*len(ESGI_GL))
-
 		ESGI_GL=ESGI_GL.reset_index().set_index('School_Short')
 		
 		gradeLevelTab.append(ESGI_GL)
@@ -540,38 +518,37 @@ def ESGI(vs_obj, finalDfs):
 	       'Foster_y':'Foster', 'EL_y':'EL', 'SED_y':'SED'})
 
 	
-		supes_race=pd.crosstab([vs_obj.df['Race_Ethn']],[vs_obj.df['Test Name'],vs_obj.df['Met EOY Benchmark']],margins=True)
-		supes_race.columns=['_'.join(col) for col in supes_race.columns.values]
+		supesRace=pd.crosstab([vs_obj.df['Race_Ethn']],[vs_obj.df['Test Name'],vs_obj.df['Met EOY Benchmark']],margins=True)
+		supesRace.columns=['_'.join(col) for col in supesRace.columns.values]
 		
-		supes_race['District']=(supes_race[test_name+"_Y"]/supes_race['All_']).mul(100).round(1).astype(str) + '%'
-
-		supes_race['District'] = np.where((supes_race['All_']) <= 10,'*',supes_race['District'])
+		supesRace['District']=(supesRace[test_name+"_Y"]/supesRace['All_']).mul(100).round(1).astype(str) + '%'
+		supesRace['District'] = np.where((supesRace['All_']) <= 10,'*',supesRace['District'])
 		
-		supes_race=supes_race.T
+		supesRace=supesRace.T
 		rename={'All':'ALL'}
 		races={'African_American':'AA', 'American Indian':'AI','American_Indian':'AI','Asian':'A', 'Filipino':'F', 'Hispanic':'HL', 'Mult':'Mult',
 	       'Pac_Islander':'PI', 'White':'W'}
-		for col in supes_race.columns:
+		for col in supesRace.columns:
 			if col in races.keys():
 				temp_col = vs_obj.assessment_type+"_"+name+" "+races[col]+"_"+vs_obj.terms[0]
 				rename[col]=temp_col
 				
-		supes_race.rename(columns=rename, inplace=True)
-		supes=supes_race.iloc[-1:, : ]
+		supesRace.rename(columns=rename, inplace=True)
+		supes=supesRace.iloc[-1:, : ]
 		
 	
-		MetEOYBenchmark_Race=pd.crosstab([vs_obj.df.School_Short, vs_obj.df.Race_Ethn],[vs_obj.df['Test Name'],vs_obj.df['Met EOY Benchmark']],values=vs_obj.df.Student_Number, 
+		MetEOYBenchmarkRace=pd.crosstab([vs_obj.df.School_Short, vs_obj.df.Race_Ethn],[vs_obj.df['Test Name'],vs_obj.df['Met EOY Benchmark']],values=vs_obj.df.Student_Number, 
 								margins=True, aggfunc='count')
-		MetEOYBenchmark_Race.columns=['_'.join(col) for col in MetEOYBenchmark_Race.columns.values]
+		MetEOYBenchmarkRace.columns=['_'.join(col) for col in MetEOYBenchmarkRace.columns.values]
 		col_x = vs_obj.metrics[0]+'_Y'
 		col_z = vs_obj.metrics[0]+'_FALSE'
-		total = MetEOYBenchmark_Race[col_x]+MetEOYBenchmark_Race[col_z]
-		MetEOYBenchmark_Race['PercentageMetEOYBenchmark']=(MetEOYBenchmark_Race[col_x]/total).mul(100).round(1)
-		MetEOYBenchmark_Race['PercentageMetEOYBenchmark'] = np.where((total) <= 10,'*',MetEOYBenchmark_Race['PercentageMetEOYBenchmark'])
-		MetEOYBenchmark_Race['PercentageMetEOYBenchmark'] = MetEOYBenchmark_Race['PercentageMetEOYBenchmark'].astype(str)+"%"
+		total = MetEOYBenchmarkRace[col_x]+MetEOYBenchmarkRace[col_z]
+		MetEOYBenchmarkRace['PercentageMetEOYBenchmark']=(MetEOYBenchmarkRace[col_x]/total).mul(100).round(1)
+		MetEOYBenchmarkRace['PercentageMetEOYBenchmark'] = np.where((total) <= 10,'*',MetEOYBenchmarkRace['PercentageMetEOYBenchmark'])
+		MetEOYBenchmarkRace['PercentageMetEOYBenchmark'] = MetEOYBenchmarkRace['PercentageMetEOYBenchmark'].astype(str)+"%"
 		
-		MetEOYBenchmark_Race.reset_index(inplace=True)
-		ESGI_Race=MetEOYBenchmark_Race.pivot(index='School_Short',
+		MetEOYBenchmarkRace.reset_index(inplace=True)
+		esgiRace=MetEOYBenchmarkRace.pivot(index='School_Short',
 										columns= 'Race_Ethn',
 										values='PercentageMetEOYBenchmark')
 		
@@ -579,26 +556,26 @@ def ESGI(vs_obj, finalDfs):
 		rename={' ':'ALL'}
 		races={'African_American':'AA', 'American Indian':'AI','American_Indian':'AI','Asian':'A', 'Filipino':'F', 'Hispanic':'HL', 'Mult':'Mult',
 	       'Pac_Islander':'PI', 'White':'W'}
-		for col in ESGI_Race.columns:
+		for col in esgiRace.columns:
 			if col in races.keys():
 				temp_col = vs_obj.assessment_type+"_"+name+" "+races[col]+"_"+vs_obj.terms[0]
 				rename[col]=temp_col
 				
-		ESGI_Race.rename(columns=rename, inplace=True)
-		ESGI_Race=ESGI_Race.replace(to_replace="*%",value="*").replace(to_replace="nan%",value="")
+		esgiRace.rename(columns=rename, inplace=True)
+		esgiRace=esgiRace.replace(to_replace="*%",value="*").replace(to_replace="nan%",value="")
 		
-		ESGI_Race=pd.concat([ESGI_Race, supes])
-		ESGI_Race.index.rename('School_Short', inplace=True)
-		ESGI_Race=ESGI_Race.reset_index().set_index('School_Short')		
+		esgiRace=pd.concat([esgiRace, supes])
+		esgiRace.index.rename('School_Short', inplace=True)
+		esgiRace=esgiRace.reset_index().set_index('School_Short')		
 		
 		drop_cols=['FALSE','Y','All','','ALL']
 		
-		for col in ESGI_Race.columns:
+		for col in esgiRace.columns:
 			if col in drop_cols:
-				ESGI_Race=ESGI_Race.drop(columns=col)
+				esgiRace=esgiRace.drop(columns=col)
 
 		
-		finalDfs.append(ESGI_Race)
+		finalDfs.append(esgiRace)
 		
 		vs_obj.df.loc[vs_obj.df['SPED'] =='ESN', 'SPED'] = 'Y'
 		vs_obj.df.loc[vs_obj.df['SPED']=='MMSN', 'SPED'] = 'Y'
@@ -610,63 +587,62 @@ def ESGI(vs_obj, finalDfs):
 
 		for column in [vs_obj.df.Foster,vs_obj.df.SPED, vs_obj.df.FIT, vs_obj.df.EL]:
 		
-			subgroup_count=pd.crosstab([vs_obj.df.School_Short,column],[vs_obj.df['Test Name'],vs_obj.df['Met EOY Benchmark']],values=vs_obj.df.Student_Number, 
+			subgroupCount=pd.crosstab([vs_obj.df.School_Short,column],[vs_obj.df['Test Name'],vs_obj.df['Met EOY Benchmark']],values=vs_obj.df.Student_Number, 
 								margins=True, aggfunc='count')
-			subgroup_count.columns=['_'.join(col) for col in subgroup_count.columns.values]
+			subgroupCount.columns=['_'.join(col) for col in subgroupCount.columns.values]
 			subgroup_dropped=['WCCUSD Count Up to 10 Objects (PLF NS 1.4) _','WCCUSD Count to 20 (PLF NS 1.1)_',
 									 'WCCUSD Letter Sounds (PLF R 3.3)_','WCCUSD Lowercase Letters (PLF R 3.2)_', '_']
-			for col in subgroup_count.columns:
+			for col in subgroupCount.columns:
 				if col in subgroup_dropped:
-					subgroups_count=subgroup_count.drop(columns=col)
+					subgroupsCount=subgroupCount.drop(columns=col)
 
 			col_y = vs_obj.metrics[0]+'_Y'
 			col_f = vs_obj.metrics[0]+'_FALSE'
-			subgroup_count[col_y]=subgroup_count[col_y].fillna(0)
-			subgroup_count[col_f]=subgroup_count[col_f].fillna(0)
-			subgroup_count['total'] = subgroup_count[col_y]+subgroup_count[col_f]
-			subgroup_count.reset_index(inplace=True)
+			subgroupCount[col_y]=subgroupCount[col_y].fillna(0)
+			subgroupCount[col_f]=subgroupCount[col_f].fillna(0)
+			subgroupCount['total'] = subgroupCount[col_y]+subgroupCount[col_f]
+			subgroupCount.reset_index(inplace=True)
 			
-			if 'SPED' in subgroup_count.columns:
-				subgroup_count = subgroup_count[subgroup_count['SPED'] == 'Y']
-				subgroup_count.loc['District'] = subgroup_count.iloc[:, :].sum()
+			if 'SPED' in subgroupCount.columns:
+				subgroupCount = subgroupCount[subgroupCount['SPED'] == 'Y']
+				subgroupCount.loc['District'] = subgroupCount.iloc[:, :].sum()
 				
-			elif 'FIT' in subgroup_count.columns:
-				subgroup_count = subgroup_count[subgroup_count['FIT'] == 'Y']
-				subgroup_count.loc['District'] = subgroup_count.iloc[:, :].sum()
+			elif 'FIT' in subgroupCount.columns:
+				subgroupCount = subgroupCount[subgroupCount['FIT'] == 'Y']
+				subgroupCount.loc['District'] = subgroupCount.iloc[:, :].sum()
 
-			elif 'EL' in subgroup_count.columns:
-				subgroup_count = subgroup_count[subgroup_count['EL'] == 'Y']
-				subgroup_count.loc['District'] = subgroup_count.iloc[:, :].sum()
+			elif 'EL' in subgroupCount.columns:
+				subgroupCount = subgroupCount[subgroupCount['EL'] == 'Y']
+				subgroupCount.loc['District'] = subgroupCount.iloc[:, :].sum()
 
-			elif 'Foster' in subgroup_count.columns:
-				subgroup_count = subgroup_count[subgroup_count['Foster'] == 'Y']
-				subgroup_count.loc['District'] = subgroup_count.iloc[:, :].sum()
+			elif 'Foster' in subgroupCount.columns:
+				subgroupCount = subgroupCount[subgroupCount['Foster'] == 'Y']
+				subgroupCount.loc['District'] = subgroupCount.iloc[:, :].sum()
 
 
-			subgroup_count.loc[subgroup_count.index[-1], 'School_Short']='District'
-			subgroup_count.loc[subgroup_count.index[-1], column.name]='Y'
-
-			subgroup_count=subgroup_count.set_index('School_Short')
+			subgroupCount.loc[subgroupCount.index[-1], 'School_Short']='District'
+			subgroupCount.loc[subgroupCount.index[-1], column.name]='Y'
+			subgroupCount=subgroupCount.set_index('School_Short')
+		
+			subgroupCount['PercentageMetEOYBenchmark']=(subgroupCount[col_y]/subgroupCount['total']).mul(100).round(1)
+			subgroupCount.loc[subgroupCount.total == 0, 'PercentageMetEOYBenchmark'] = ""
+			subgroupCount.loc[(subgroupCount['total'] <= 10) & (subgroupCount['total'] > 0), 'PercentageMetEOYBenchmark'] = "*"
+			subgroupCount=subgroupCount.reset_index()
+			subgroupCount=subgroupCount[['School_Short', column.name, 'PercentageMetEOYBenchmark']]
+			subgroupCount['PercentageMetEOYBenchmark']=subgroupCount['PercentageMetEOYBenchmark'].astype(str)+"%"
+			subgroupCount=subgroupCount.rename(columns = {'PercentageMetEOYBenchmark': vs_obj.assessment_type+"_"+name+" "+column.name+"_"+vs_obj.terms[0]})
 			
-			subgroup_count['PercentageMetEOYBenchmark']=(subgroup_count[col_y]/subgroup_count['total']).mul(100).round(1)
-			subgroup_count.loc[subgroup_count.total == 0, 'PercentageMetEOYBenchmark'] = ""
-			subgroup_count.loc[(subgroup_count['total'] <= 10) & (subgroup_count['total'] > 0), 'PercentageMetEOYBenchmark'] = "*"
-			subgroup_count=subgroup_count.reset_index()
-			subgroup_count=subgroup_count[['School_Short', column.name, 'PercentageMetEOYBenchmark']]
-			subgroup_count['PercentageMetEOYBenchmark']=subgroup_count['PercentageMetEOYBenchmark'].astype(str)+"%"
-			subgroup_count=subgroup_count.rename(columns = {'PercentageMetEOYBenchmark': vs_obj.assessment_type+"_"+name+" "+column.name+"_"+vs_obj.terms[0]})
+			subgroupCount=subgroupCount.set_index('School_Short')
+			subgroupCount[column.name] = subgroupCount[column.name].replace(r'^\s*$', np.nan, regex=True)
+			final_subgroupCount=subgroupCount[subgroupCount[column.name] =='Y']
+			final_subgroupCount=final_subgroupCount.replace(to_replace="*%",value="*").replace(to_replace="%",value="")
+			final_subgroupCount=final_subgroupCount.drop(columns=column.name)
 			
-			subgroup_count=subgroup_count.set_index('School_Short')
-			subgroup_count[column.name] = subgroup_count[column.name].replace(r'^\s*$', np.nan, regex=True)
-			final_subgroup_count=subgroup_count[subgroup_count[column.name] =='Y']
-			final_subgroup_count=final_subgroup_count.replace(to_replace="*%",value="*").replace(to_replace="%",value="")
-			final_subgroup_count=final_subgroup_count.drop(columns=column.name)
-			
-			finalDfs.append(final_subgroup_count)
+			finalDfs.append(final_subgroupCount)
 		
 	
 def starSB(vs_obj, finalDfs):
-	idx_rename = {'All':'District'} 
+	idxRename = {'All':'District'} 
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 
     #new for 23-24 only calculating 9-11
@@ -674,11 +650,10 @@ def starSB(vs_obj, finalDfs):
 
 	#for previous cycles grade level filters were applied using the starFilters(vs_obj) function
 	#starFilters(vs_obj)
-
 	vs_obj.df=vs_obj.df.sort_values('CompletedDate').groupby('Student_Number').tail(1)
 	vs_obj.df=vs_obj.df[vs_obj.df.AssessmentStatus =='Active']
 
-	SBcrosstab_ALL_count=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df.StateBenchmarkProficient])
+	SBcrosstab_ALLCount=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df.StateBenchmarkProficient])
 	SBcrosstab_ALL=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df.StateBenchmarkProficient],normalize='index', margins=True,margins_name='District').mul(100).round(1).astype(str)+"%"
 	
 	rename={}
@@ -690,8 +665,7 @@ def starSB(vs_obj, finalDfs):
 			rename[col]=temp_col
 			
 	SBcrosstab_ALL.rename(columns=rename, inplace=True)
-	
-	SBcrosstab_ALL = SBcrosstab_ALL.rename(index=idx_rename)
+	SBcrosstab_ALL = SBcrosstab_ALL.rename(index=idxRename)
 	finalDfs.append(SBcrosstab_ALL)
 	
 	SBcrosstab=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df.Race_Ethn,vs_obj.df.StateBenchmarkProficient])
@@ -704,27 +678,23 @@ def starSB(vs_obj, finalDfs):
 	
 	rslt=numerator.div(denominator, level = 0, axis = 'index').mul(100).round(1)
 	rslt=rslt.mask(rslt < 0, "*").astype(str)+"%"
-	
 	rslt=rslt.replace(to_replace="*%",value="*").replace(to_replace="-0.0%",value="*").replace(to_replace="nan%",value="")
-	
-	
 	rslt=rslt.T
 	rslt.columns=['_'.join(col) for col in rslt.columns.values]
 	
-
-	supes_race=pd.crosstab([vs_obj.df['Race_Ethn']],[vs_obj.df['StateBenchmarkProficient']],margins=True)
-	supes_race['District']=(supes_race['Yes']/supes_race['All']).mul(100).round(1).astype(str) + '%'
-	supes_race['District'] = np.where((supes_race['All']) <= 10,'*',supes_race['District'])
-	supes_race = supes_race.rename(index=idx_rename)
-	supes_race= supes_race.drop(columns=['No','Yes','All'])
-	supes_race=supes_race.T
+	supesRace=pd.crosstab([vs_obj.df['Race_Ethn']],[vs_obj.df['StateBenchmarkProficient']],margins=True)
+	supesRace['District']=(supesRace['Yes']/supesRace['All']).mul(100).round(1).astype(str) + '%'
+	supesRace['District'] = np.where((supesRace['All']) <= 10,'*',supesRace['District'])
+	supesRace = supesRace.rename(index=idxRename)
+	supesRace= supesRace.drop(columns=['No','Yes','All'])
+	supesRace=supesRace.T
 	
 	rename={}
 	races={'African_American':'AA', 'African_American_Yes':'AA','American Indian':'AI','American_Indian':'AI','Asian':'A', 'Filipino':'F', 'Hispanic':'HL', 'Mult':'Mult',
        'Pac_Islander':'PI', 'White':'W', 'District':'ALL','American Indian_Yes':'AI','American_Indian_Yes':'AI','Asian_Yes':'A', 'Filipino_Yes':'F', 'Hispanic_Yes':'HL', 'Mult_Yes':'Mult',
        'Pac_Islander_Yes':'PI', 'White_Yes':'W'}
 	
-	for col in supes_race.columns:
+	for col in supesRace.columns:
 		if col in races.keys():
 			temp_col = vs_obj.assessment_type+vs_obj.subjects[0]+vs_obj.metrics[0]+" "+races[col]+"_"+vs_obj.terms[0]
 			rename[col]=temp_col
@@ -733,17 +703,15 @@ def starSB(vs_obj, finalDfs):
 			temp_col = vs_obj.assessment_type+vs_obj.subjects[0]+vs_obj.metrics[0]+" "+races[col]+"_"+vs_obj.terms[0]
 			rename[col]=temp_col
 	
-	supes_race.index.rename('School_Short', inplace=True)
-	supes_race=supes_race.reset_index().set_index('School_Short')		
-	supes_race.rename(columns=rename, inplace=True)
+	supesRace.index.rename('School_Short', inplace=True)
+	supesRace=supesRace.reset_index().set_index('School_Short')		
+	supesRace.rename(columns=rename, inplace=True)
 	dropped=['STARmathSB ALL_SP2023','STARreadSB ALL_SP2023']
 	for col in dropped:
-		if col in supes_race.columns:
-			supes_race=supes_race.drop(columns=col)
+		if col in supesRace.columns:
+			supesRace=supesRace.drop(columns=col)
 	rslt.rename(columns=rename, inplace=True)
-	
-
-	rslt = pd.concat([rslt, supes_race])
+	rslt = pd.concat([rslt, supesRace])
 	finalDfs.append(rslt)
 	
 	subgroups(vs_obj,0, finalDfs)
@@ -775,8 +743,6 @@ def selSGP(vs_obj, finalDfs):
 		vs_obj.df['LowHigh']=vs_obj.df['Low']+vs_obj.df['Typical and High']
 		CountAll = vs_obj.df.groupby(["School_Short"])["StudentGrowthPercentileFallSpring"].count().reset_index(name="count")
 		
-		
-
 		#SGP for ALL students
 		
 		CountTypicalHigh = vs_obj.df[['School_Short','Typical and High']].groupby(['School_Short']).sum()
@@ -802,7 +768,6 @@ def selSGP(vs_obj, finalDfs):
 		for column in [vs_obj.df.Foster,vs_obj.df.SPED, vs_obj.df.FIT, vs_obj.df.EL]:
 
 			tableframe = pd.pivot_table(vs_obj.df, values=['Typical and High','LowHigh'], index=['School_Short', column], aggfunc=np.sum)
-			
 			tableframe.reset_index(inplace=True)
 			if 'SPED' in tableframe.columns:
 				tableframe = tableframe[tableframe['SPED'] == 'Y']
@@ -837,56 +802,48 @@ def selSGP(vs_obj, finalDfs):
 
 				
 		#Race SEL SGP
-		SELSGP_Race = pd.pivot_table(vs_obj.df, values=['Typical and High','LowHigh'], index=['School_Short', 'Race_Ethn'], aggfunc=np.sum, margins=True)
+		selSGPRace = pd.pivot_table(vs_obj.df, values=['Typical and High','LowHigh'], index=['School_Short', 'Race_Ethn'], aggfunc=np.sum, margins=True)
+		selSGPRace['SGPPercentage']= selSGPRace['Typical and High']/selSGPRace['LowHigh'] * 100
+		selSGPRace['SGPPercentage'] = selSGPRace['SGPPercentage'].map('{:,.1f}'.format)
+		selSGPRace['SGPPercentage'] = np.where((selSGPRace['LowHigh']) <= 10,'-1',selSGPRace['SGPPercentage'])
+		selSGPRace.reset_index(inplace=True)
 		
-		SELSGP_Race['SGPPercentage']= SELSGP_Race['Typical and High']/SELSGP_Race['LowHigh'] * 100
-	
-		SELSGP_Race['SGPPercentage'] = SELSGP_Race['SGPPercentage'].map('{:,.1f}'.format)
-		SELSGP_Race['SGPPercentage'] = np.where((SELSGP_Race['LowHigh']) <= 10,'-1',SELSGP_Race['SGPPercentage'])
-	
-		SELSGP_Race.reset_index(inplace=True)
-		
-		SELSGP_Race2=SELSGP_Race.pivot(index='School_Short',
+		selSGPRace2=selSGPRace.pivot(index='School_Short',
 									columns= 'Race_Ethn',
 									values='SGPPercentage')
 	
-	
-		SELSGP_Race2=SELSGP_Race2.astype(str) + '%'
-		SELSGP_Race2=SELSGP_Race2.replace(to_replace="-1%",value="*").replace(to_replace="nan%",value="")
+		selSGPRace2=selSGPRace2.astype(str) + '%'
+		selSGPRace2=selSGPRace2.replace(to_replace="-1%",value="*").replace(to_replace="nan%",value="")
 		
 		
 		#district totals
-		dist_table=pd.pivot_table(vs_obj.df, values=['Typical and High','LowHigh'], index=['Race_Ethn'], aggfunc=np.sum)
-		dist_table['District']= dist_table['Typical and High']/dist_table['LowHigh'] * 100
-
-		dist_table['District'] = dist_table['District'].map('{:,.1f}'.format)
-		dist_table['District'] = np.where((dist_table['LowHigh']) <= 10,'-1',dist_table['District'])
-	
-		dist_table= dist_table.drop(columns=['LowHigh','Typical and High'])
-		dist_table=dist_table.T
+		distTable=pd.pivot_table(vs_obj.df, values=['Typical and High','LowHigh'], index=['Race_Ethn'], aggfunc=np.sum)
+		distTable['District']= distTable['Typical and High']/distTable['LowHigh'] * 100
+		distTable['District'] = distTable['District'].map('{:,.1f}'.format)
+		distTable['District'] = np.where((distTable['LowHigh']) <= 10,'-1',distTable['District'])
+		distTable= distTable.drop(columns=['LowHigh','Typical and High'])
+		distTable=distTable.T
 	
 		rename={}
 		races={'African_American':'AA', 'American Indian':'AI','American_Indian':'AI','Asian':'A', 'Filipino':'F', 'Hispanic':'HL', 'Mult':'Mult',
        'Pac_Islander':'PI', 'White':'W'}
-		for col in dist_table.columns:
+		for col in distTable.columns:
 			if col in races.keys():
 				temp_col = vs_obj.assessment_column+vs_obj.subjects[0]+vs_obj.metrics[0]+" "+races[col]+"_"+vs_obj.terms[0]
 				rename[col]=temp_col
-		dist_table.index.rename('School_Short', inplace=True)
-		dist_table=dist_table.reset_index().set_index('School_Short')		
-		dist_table.rename(columns=rename, inplace=True)
-		dist_table=dist_table.round(1).astype(str) + '%'	
+		distTable.index.rename('School_Short', inplace=True)
+		distTable=distTable.reset_index().set_index('School_Short')		
+		distTable.rename(columns=rename, inplace=True)
+		distTable=distTable.round(1).astype(str) + '%'	
 		
-
-		for col in SELSGP_Race2.columns:
+		for col in selSGPRace2.columns:
 			if col in races.keys():		
 				temp_col = vs_obj.assessment_column+vs_obj.subjects[0]+vs_obj.metrics[0]+" "+races[col]+"_"+vs_obj.terms[0]
 				rename[col]=temp_col
 		
-		SELSGP_Race2.rename(columns=rename, inplace=True)
-		rslt = pd.concat([SELSGP_Race2, dist_table])
+		selSGPRace2.rename(columns=rename, inplace=True)
+		rslt = pd.concat([selSGPRace2, distTable])
 		rslt=rslt.replace(to_replace="-1%", value="*").replace(to_replace="-1", value="*")
-		
 		finalDfs.append(rslt)
 
 		grade_levels(vs_obj, 0,finalDfs)
@@ -895,14 +852,11 @@ def starSGP(vs_obj, finalDfs):
 	#STAR SGP
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 	
-	
     #for 23-24 only calculating 9-11
 	newSTARFilter(vs_obj)
 
 	#for previous cycles grade level filters were applied using the starFilters(vs_obj) function
 	#starFilters(vs_obj)
-			
-	
 	if vs_obj.terms[0] == 'FA2022':
 		#.dropna() here and then drop again after converting to_numeric()
 
@@ -960,7 +914,6 @@ def starSGP(vs_obj, finalDfs):
 			temp_col = vs_obj.assessment_type+vs_obj.subjects[0]+vs_obj.metrics[0]+" "+races[col]+"_"+vs_obj.terms[0]
 			rename[col]=temp_col
 	rslt.rename(columns=rename, inplace=True)
-	
 	finalDfs.append(rslt)
 
 	grade_levels(vs_obj, 0,finalDfs)
@@ -975,10 +928,8 @@ def starSGPSubgroups(vs_obj,finalDfs):
 
 	#for previous cycles grade level filters were applied using the starFilters(vs_obj) function
 	#starFilters(vs_obj)
-	
 	vs_obj.df=vs_obj.df.sort_values('CompletedDate').groupby('StudentIdentifier').tail(1)
 	
-
 	#.dropna() here and then drop again after converting to_numeric()
 	vs_obj.df=vs_obj.df.dropna()
 	if vs_obj.terms[0] == 'FA2022':
@@ -998,7 +949,6 @@ def starSGPSubgroups(vs_obj,finalDfs):
 		vs_obj.df['Low'] = vs_obj.df['StudentGrowthPercentileFallWinter'].apply(lambda x:1 if x <35 else 0)
 
 	elif vs_obj.terms[0] == 'SP2023':
-	
 		vs_obj.df['StudentGrowthPercentileFallSpring']=pd.to_numeric(vs_obj.df['StudentGrowthPercentileFallSpring'])
 		#have to dropna() after coverting to numeric
 		vs_obj.df=vs_obj.df.dropna()	
@@ -1011,12 +961,8 @@ def starSGPSubgroups(vs_obj,finalDfs):
 	SGPCount=pd.crosstab([vs_obj.df.School_Short], [vs_obj.df.Race_Ethn], values=vs_obj.df.StudentIdentifier,aggfunc='count',margins=True)
 	SGPTYPHIGH=pd.crosstab([vs_obj.df.School_Short], [vs_obj.df.Race_Ethn, vs_obj.df.Typ_High], values=vs_obj.df.StudentIdentifier, aggfunc='count',margins=True)
 	
-	
 	tableframe = pd.pivot_table(vs_obj.df, values=['Typ_High','LowHigh'], index=['School_Short','Race_Ethn'], aggfunc=np.sum)
-	
-
 	tableframe['SGPPercentage']= tableframe['Typ_High']/tableframe['LowHigh'] * 100
-	
 	tableframe['SGPPercentage'] = tableframe['SGPPercentage'].map('{:,.1f}'.format)
 	tableframe['SGPPercentage'] = np.where((tableframe['LowHigh']) <= 10,'-1',tableframe['SGPPercentage'])
 	
@@ -1031,27 +977,26 @@ def starSGPSubgroups(vs_obj,finalDfs):
 	
 	
 	#district totals
-	dist_table=pd.pivot_table(vs_obj.df, values=['Typ_High','LowHigh'], index=['Race_Ethn'], aggfunc=np.sum)
-	dist_table['District']= dist_table['Typ_High']/dist_table['LowHigh'] * 100
-
-	dist_table['District'] = dist_table['District'].map('{:,.1f}'.format)
-	dist_table['District'] = np.where((dist_table['LowHigh']) <= 10,'-1',dist_table['District'])
+	distTable=pd.pivot_table(vs_obj.df, values=['Typ_High','LowHigh'], index=['Race_Ethn'], aggfunc=np.sum)
+	distTable['District']= distTable['Typ_High']/distTable['LowHigh'] * 100
+	distTable['District'] = distTable['District'].map('{:,.1f}'.format)
+	distTable['District'] = np.where((distTable['LowHigh']) <= 10,'-1',distTable['District'])
 	
-	#dist_table = dist_table.rename(index=idx_rename)
-	dist_table= dist_table.drop(columns=['LowHigh','Typ_High'])
-	dist_table=dist_table.T
+	#distTable = distTable.rename(index=idxRename)
+	distTable= distTable.drop(columns=['LowHigh','Typ_High'])
+	distTable=distTable.T
 	
 	rename={}
 	races={'African_American':'AA', 'American Indian':'AI','American_Indian':'AI','Asian':'A', 'Filipino':'F', 'Hispanic':'HL', 'Mult':'Mult',
        'Pac_Islander':'PI', 'White':'W'}
-	for col in dist_table.columns:
+	for col in distTable.columns:
 		if col in races.keys():
 			temp_col = vs_obj.assessment_type+vs_obj.subjects[0]+vs_obj.metrics[0]+" "+races[col]+"_"+vs_obj.terms[0]
 			rename[col]=temp_col
-	dist_table.index.rename('School_Short', inplace=True)
-	dist_table=dist_table.reset_index().set_index('School_Short')		
-	dist_table.rename(columns=rename, inplace=True)
-	dist_table=dist_table.round(1).astype(str) + '%'
+	distTable.index.rename('School_Short', inplace=True)
+	distTable=distTable.reset_index().set_index('School_Short')		
+	distTable.rename(columns=rename, inplace=True)
+	distTable=distTable.round(1).astype(str) + '%'
 	
 	rename={}
 	races={'African_American':'AA', 'African_American_Yes':'AA','American Indian':'AI','American_Indian':'AI','Asian':'A', 'Filipino':'F', 'Hispanic':'HL', 'Mult':'Mult',
@@ -1063,13 +1008,10 @@ def starSGPSubgroups(vs_obj,finalDfs):
 			rename[col]=temp_col
 	tableframe2.rename(columns=rename, inplace=True)
 
-	rslt = pd.concat([tableframe2, dist_table])
-	
+	rslt = pd.concat([tableframe2, distTable])
 	rslt=rslt.replace(to_replace="-1%", value="*").replace(to_replace="-1", value="*")
-	
 	finalDfs.append(rslt)
 	
-
 	vs_obj.df.loc[vs_obj.df['SPED'] =='ESN', 'SPED'] = 'Y'
 	vs_obj.df.loc[vs_obj.df['SPED']=='MMSN', 'SPED'] = 'Y'
 	vs_obj.df.loc[vs_obj.df['SPED']=='', 'SPED'] = 'NotSPED'
@@ -1084,7 +1026,6 @@ def starSGPSubgroups(vs_obj,finalDfs):
 		#tableframe.columns=['_'.join(col) for col in tableframe.columns.values]
 		tableframe.reset_index(inplace=True)
 		
-		
 		if 'SPED' in tableframe.columns:
 			tf_subgroup = tableframe[tableframe['SPED'] == 'Y']
 			
@@ -1097,7 +1038,6 @@ def starSGPSubgroups(vs_obj,finalDfs):
 		if 'Foster' in tableframe.columns:
 			tf_subgroup = tableframe[tableframe['Foster'] == 'Y']
 			
-		
 		tf_subgroup=tf_subgroup.set_index('School_Short')
 		tf_subgroup.loc['District']=tf_subgroup.sum()
 		tf_subgroup.loc[tf_subgroup.index[-1], column.name]=''
@@ -1132,141 +1072,123 @@ def iReadyPP(vs_obj,finalDfs):
 			column = vs_obj.df['Proficiency if Student Shows No Additional Growth']
 		
 		#Race for District Totals
-		iR_PP_dist_race=pd.crosstab([vs_obj.df['Race_Ethn']],[column], values=vs_obj.df.Student_Number, aggfunc='count',normalize='index',margins=True)
-		iR_PP_dist_race=iR_PP_dist_race.fillna(0)
-
-		
-		iR_PP_dist_race['ProjProf']=iR_PP_dist_race['Level 3']+iR_PP_dist_race['Level 4']
-		iR_PP_dist_race =iR_PP_dist_race.drop(['Level 1', 'Level 2', 'Level 3', 'Level 4'], axis=1)
-		iR_PP_dist_race=iR_PP_dist_race.mul(100).round(2).astype(str) + '%'
-
-		iR_PP_dist_race=iR_PP_dist_race.T
-		idx_rename={'ProjProf':'District'}
-		iR_PP_dist_race = iR_PP_dist_race.rename(index=idx_rename)
-		iR_PP_dist_race.index.name='School_Short'
+		ppDistRace=pd.crosstab([vs_obj.df['Race_Ethn']],[column], values=vs_obj.df.Student_Number, aggfunc='count',normalize='index',margins=True)
+		ppDistRace=ppDistRace.fillna(0)		
+		ppDistRace['ProjProf']=ppDistRace['Level 3']+ppDistRace['Level 4']
+		ppDistRace =ppDistRace.drop(['Level 1', 'Level 2', 'Level 3', 'Level 4'], axis=1)
+		ppDistRace=ppDistRace.mul(100).round(2).astype(str) + '%'
+		ppDistRace=ppDistRace.T
+		idxRename={'ProjProf':'District'}
+		ppDistRace = ppDistRace.rename(index=idxRename)
+		ppDistRace.index.name='School_Short'
 
 		rename={}
 		races={'African_American':'AA', 'American_Indian':'AI','American Indian':'AI','Asian':'A', 'Filipino':'F', 'Hispanic':'HL', 'Mult':'Mult',
 		   			'Pac_Islander':'PI', 'White':'W', 'District':'District', 'All':'ALL'}
-		for col in iR_PP_dist_race.columns:
+		for col in ppDistRace.columns:
 			if col in races.keys():		
 				temp_col = vs_obj.assessment_type+vs_obj.subjects[0]+'ProjProf '+races[col]+"_"+vs_obj.terms[0]
 				rename[col]=temp_col
 			
-		iR_PP_dist_race.rename(columns=rename, inplace=True)
+		ppDistRace.rename(columns=rename, inplace=True)
 		
-
 		#iReady PP ALL by School	
 		rslt=pd.crosstab([vs_obj.df.School_Short],[column], 
 							values=vs_obj.df.Student_Number, aggfunc='count',normalize='index',margins=True)
 
-		rslt_count=pd.crosstab([vs_obj.df.School_Short],[column], 
+		rsltCount=pd.crosstab([vs_obj.df.School_Short],[column], 
 							values=vs_obj.df.Student_Number, aggfunc='count',margins=True)
 		rslt.fillna(0)
-
 		rslt['ProjProf']=rslt['Level 3']+rslt['Level 4']
 		rslt =rslt.drop(['Level 1', 'Level 2', 'Level 3', 'Level 4'], axis=1)
 		rslt=rslt.mul(100).round(2).astype(str) + '%'
-		idx_rename = {'All':'District'}
-		rslt = rslt.rename(index=idx_rename)
-		
+		idxRename = {'All':'District'}
+		rslt = rslt.rename(index=idxRename)
 
-		rslt['ProjProf'] = np.where((rslt_count['All']) <= 10,'*',rslt['ProjProf'])
+		rslt['ProjProf'] = np.where((rsltCount['All']) <= 10,'*',rslt['ProjProf'])
 		rslt.rename(columns={'ProjProf':vs_obj.assessment_type+vs_obj.subjects[0]+'ProjProf ALL'+"_"+vs_obj.terms[0]}, inplace=True)
 		
 		#Grade Level iReadyPP
-		grade_lvl=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[column], 
+		grdLvl=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[column], 
 							values=vs_obj.df.Student_Number, aggfunc='count',normalize='index').mul(100).round(1)
 		
 		
-		grade_lvl_count=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[column], 
+		grdLvlCount=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[column], 
 							values=vs_obj.df.Student_Number, aggfunc='count')
 
-		grade_lvl_count = grade_lvl_count.fillna(0)
-		grade_lvl_count['Total']=grade_lvl_count['Level 1']+grade_lvl_count['Level 2']+grade_lvl_count['Level 3']+grade_lvl_count['Level 4']
+		grdLvlCount = grdLvlCount.fillna(0)
+		grdLvlCount['Total']=grdLvlCount['Level 1']+grdLvlCount['Level 2']+grdLvlCount['Level 3']+grdLvlCount['Level 4']
 
-		grade_lvl['ProjProf']=grade_lvl['Level 3']+grade_lvl['Level 4']
-		grade_lvl['ProjProf'] = np.where((grade_lvl_count['Total']) <= 10,'*',grade_lvl['ProjProf'])
+		grdLvl['ProjProf']=grdLvl['Level 3']+grdLvl['Level 4']
+		grdLvl['ProjProf'] = np.where((grdLvlCount['Total']) <= 10,'*',grdLvl['ProjProf'])
 
-		grade_lvl =grade_lvl.drop(['Level 1', 'Level 2', 'Level 3', 'Level 4'], axis=1)
-		grade_lvl=grade_lvl.reset_index()
-
-		
-		grade_lvl = grade_lvl.pivot(index='School_Short',
+		grdLvl =grdLvl.drop(['Level 1', 'Level 2', 'Level 3', 'Level 4'], axis=1)
+		grdLvl=grdLvl.reset_index()
+		grdLvl = grdLvl.pivot(index='School_Short',
 										columns= 'Grade Level',
 										values='ProjProf').astype(str)+"%"
 
+		grdLvl=grdLvl.replace(to_replace="nan%",value="").replace(to_replace="*%", value="*")
 
-		grade_lvl=grade_lvl.replace(to_replace="nan%",value="").replace(to_replace="*%", value="*")
-
-		grade_lvl_dist=pd.crosstab([vs_obj.df['Grade Level']],[column], 
+		grdLvlDist=pd.crosstab([vs_obj.df['Grade Level']],[column], 
 							values=vs_obj.df.Student_Number, aggfunc='count',normalize='index').mul(100).round(1)
 
-		grade_lvl_dist_count=pd.crosstab([vs_obj.df['Grade Level']],[column], 
+		grdLvlDistCount=pd.crosstab([vs_obj.df['Grade Level']],[column], 
 							values=vs_obj.df.Student_Number, aggfunc='count')
 
-		grade_lvl_dist_count = grade_lvl_dist_count.fillna(0)
-		grade_lvl_dist_count['Total']=grade_lvl_dist_count['Level 1']+grade_lvl_dist_count['Level 2']+grade_lvl_dist_count['Level 3']+grade_lvl_dist_count['Level 4']
+		grdLvlDistCount = grdLvlDistCount.fillna(0)
+		grdLvlDistCount['Total']=grdLvlDistCount['Level 1']+grdLvlDistCount['Level 2']+grdLvlDistCount['Level 3']+grdLvlDistCount['Level 4']
 
-		grade_lvl_dist['ProjProf']=(grade_lvl_dist['Level 3']+grade_lvl_dist['Level 4']).astype(str)+"%"
-		grade_lvl_dist['ProjProf'] = np.where((grade_lvl_dist_count['Total']) <= 10,'*',grade_lvl_dist['ProjProf'])
+		grdLvlDist['ProjProf']=(grdLvlDist['Level 3']+grdLvlDist['Level 4']).astype(str)+"%"
+		grdLvlDist['ProjProf'] = np.where((grdLvlDistCount['Total']) <= 10,'*',grdLvlDist['ProjProf'])
+		grdLvlDist =grdLvlDist.drop(['Level 1', 'Level 2', 'Level 3', 'Level 4'], axis=1)
+		grdLvlDist=grdLvlDist.rename(columns={'ProjProf':'District'})
+		grdLvlDist=grdLvlDist.T
 
-		grade_lvl_dist =grade_lvl_dist.drop(['Level 1', 'Level 2', 'Level 3', 'Level 4'], axis=1)
-		grade_lvl_dist=grade_lvl_dist.rename(columns={'ProjProf':'District'})
-		grade_lvl_dist=grade_lvl_dist.T
-
-
+		grdLvl=pd.concat([grdLvl, grdLvlDist])
 		
-		grade_lvl=pd.concat([grade_lvl, grade_lvl_dist])
-		
-		grade_lvl=gradeLevelAddColumns(vs_obj, grade_lvl)
-		gradeLevelTab.append(grade_lvl)
+		grdLvl=gradeLevelAddColumns(vs_obj, grdLvl)
+		gradeLevelTab.append(grdLvl)
 
-
-		#Race iReady PP
-		
-		rslt_race_pp_count=pd.crosstab([vs_obj.df.School_Short, vs_obj.df.Race_Ethn],[column],
+		#Race iReady PP		
+		rsltRacePPCount=pd.crosstab([vs_obj.df.School_Short, vs_obj.df.Race_Ethn],[column],
 							 values=vs_obj.df.Student_Number, aggfunc='count')
 		
-
-		rslt_race_pp_count=rslt_race_pp_count.fillna(0)
-		rslt_race_pp_count['StuGroupCount']=rslt_race_pp_count['Level 1']+rslt_race_pp_count['Level 2']+rslt_race_pp_count['Level 3']+rslt_race_pp_count['Level 4']
-
-		rslt_race=pd.crosstab([vs_obj.df.School_Short, vs_obj.df.Race_Ethn],[column], 
+		rsltRacePPCount=rsltRacePPCount.fillna(0)
+		rsltRacePPCount['StuGroupCount']=rsltRacePPCount['Level 1']+rsltRacePPCount['Level 2']+rsltRacePPCount['Level 3']+rsltRacePPCount['Level 4']
+		rsltRace=pd.crosstab([vs_obj.df.School_Short, vs_obj.df.Race_Ethn],[column], 
 								values=vs_obj.df.Student_Number, aggfunc='count',normalize='index',margins=True)
-		rslt_race['ProjProf']=rslt_race['Level 3']+rslt_race['Level 4']
-		rslt_race['StuCount']= rslt_race_pp_count['StuGroupCount']
-		rslt_race.loc[rslt_race['StuCount'] <= 10, 'ProjProf'] = -1
+		rsltRace['ProjProf']=rsltRace['Level 3']+rsltRace['Level 4']
+		rsltRace['StuCount']= rsltRacePPCount['StuGroupCount']
+		rsltRace.loc[rsltRace['StuCount'] <= 10, 'ProjProf'] = -1
 		
-		rslt_race =rslt_race.apply(pd.to_numeric)
-		rslt_race.reset_index(inplace=True)
+		rsltRace =rsltRace.apply(pd.to_numeric)
+		rsltRace.reset_index(inplace=True)
 		
-		rslt_race_pp = rslt_race.pivot(index='School_Short',
+		rsltRacePP = rsltRace.pivot(index='School_Short',
 										columns= 'Race_Ethn',
 										values='ProjProf')
 		
 
-		rslt_race_pp=rslt_race_pp.mul(100).round(1).astype(str) + '%'
-		rslt_race_pp=rslt_race_pp.replace(to_replace="-100.0%",value="*").replace(to_replace="nan%",value="")
-		
+		rsltRacePP=rsltRacePP.mul(100).round(1).astype(str) + '%'
+		rsltRacePP=rsltRacePP.replace(to_replace="-100.0%",value="*").replace(to_replace="nan%",value="")
 		
 		rename={}
 		races={'African_American':'AA', 'American_Indian':'AI','American Indian':'AI','Asian':'A', 'Filipino':'F', 'Hispanic':'HL', 'Mult':'Mult',
 		   			'Pac_Islander':'PI', 'White':'W'} #'ProjProf':'ALL'
 
-		for col in rslt_race_pp.columns:
+		for col in rsltRacePP.columns:
 			if col in races.keys():		
 				temp_col = vs_obj.assessment_type+vs_obj.subjects[0]+'ProjProf '+races[col]+"_"+vs_obj.terms[0]
 				rename[col]=temp_col
 		
-		rslt_race_pp.rename(columns=rename, inplace=True)
+		rsltRacePP.rename(columns=rename, inplace=True)
 		
 
-	
-		#appends iR_PP_dist_race for District total to rslt_race_GL_pivt which has by school totals
+		#appends ppDistRace for District total to rsltRaceGL_pivt which has by school totals
 				
-		frames=[rslt_race_pp,rslt]
-		rslt_race_Final=pd.concat(frames,
+		frames=[rsltRacePP,rslt]
+		rsltRaceFinal=pd.concat(frames,
 							    axis=1,
 							    join="outer",
 							    ignore_index=False,
@@ -1277,16 +1199,14 @@ def iReadyPP(vs_obj,finalDfs):
 							    copy=True,
 							)
 
-		rslt_race_Final=rslt_race_Final.reset_index()
-		rslt_race_Final.drop(index=rslt_race_Final[rslt_race_Final['School_Short'] == 'District'].index, inplace=True)
-		
-		rslt_race_Final=pd.concat([rslt_race_Final, iR_PP_dist_race])
-		rslt_race_Final['School_Short'] = rslt_race_Final['School_Short'].fillna('District')
-		rslt_race_Final=rslt_race_Final.reset_index(drop=True).set_index('School_Short')
-		idx_rename = {'':'District'}
-		rslt_race_Final = rslt_race_Final.rename(index=idx_rename)
-
-		finalDfs.append(rslt_race_Final)
+		rsltRaceFinal=rsltRaceFinal.reset_index()
+		rsltRaceFinal.drop(index=rsltRaceFinal[rsltRaceFinal['School_Short'] == 'District'].index, inplace=True)
+		rsltRaceFinal=pd.concat([rsltRaceFinal, ppDistRace])
+		rsltRaceFinal['School_Short'] = rsltRaceFinal['School_Short'].fillna('District')
+		rsltRaceFinal=rsltRaceFinal.reset_index(drop=True).set_index('School_Short')
+		idxRename = {'':'District'}
+		rsltRaceFinal = rsltRaceFinal.rename(index=idxRename)
+		finalDfs.append(rsltRaceFinal)
 		
 		subgroups(vs_obj,0, finalDfs)
 
@@ -1323,7 +1243,7 @@ def iReadyGradeLevel(vs_obj,finalDfs):
 	else:
 		rslt['Below']=rslt['1 Grade Level Below']+rslt['2 Grade Levels Below']
 	
-	rslt['total_count']=rslt['On or Above']+rslt['Below']
+	rslt['totalCount']=rslt['On or Above']+rslt['Below']
 	
 	
 	drop_cols=['1 Grade Level Below', '2 Grade Levels Below', '3 or More Grade Levels Below']
@@ -1343,102 +1263,102 @@ def iReadyGradeLevel(vs_obj,finalDfs):
 	rslt.rename(columns=rename, inplace=True)
 	
 
-	rslt['Percent_On_Above']=(rslt['On or Above']/rslt['total_count']).mul(100).round(1).astype('str')+'%'
+	rslt['Percent_On_Above']=(rslt['On or Above']/rslt['totalCount']).mul(100).round(1).astype('str')+'%'
 	rslt['Percent_On_Above'] = np.where((rslt['All']) <= 10,'*',rslt['Percent_On_Above'])
 	rslt=rslt.rename(columns={'Percent_On_Above':vs_obj.assessment_type+vs_obj.subjects[0]+'GradeLevel '+"ALL_"+vs_obj.terms[0]})
 	#grade level tabs
-	grade_lvl=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[vs_obj.df['Overall Relative Placement']], 
+	grdLvl=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[vs_obj.df['Overall Relative Placement']], 
 						values=vs_obj.df.Student_Number, aggfunc='count',normalize='index')
 
 
-	grade_lvl_count=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[vs_obj.df['Overall Relative Placement']], 
+	grdLvlCount=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[vs_obj.df['Overall Relative Placement']], 
 						values=vs_obj.df.Student_Number, aggfunc='count')
 
-	grade_lvl_count=grade_lvl_count.fillna(0)
-	grade_lvl['Percent_On_Above']=grade_lvl['Early On Grade Level']+grade_lvl['Mid or Above Grade Level']
+	grdLvlCount=grdLvlCount.fillna(0)
+	grdLvl['Percent_On_Above']=grdLvl['Early On Grade Level']+grdLvl['Mid or Above Grade Level']
 	drop_cols=['1 Grade Level Below', '2 Grade Levels Below', '3 or More Grade Levels Below']
 	for col in drop_cols:
-		if col in grade_lvl.columns:
-			grade_lvl =grade_lvl.drop(col, axis=1)
-	grade_lvl=grade_lvl.mul(100).round(2).astype(str) + '%'
-	grade_lvl=grade_lvl.reset_index()
-	grade_lvl =grade_lvl.pivot(index='School_Short',
+		if col in grdLvl.columns:
+			grdLvl =grdLvl.drop(col, axis=1)
+	grdLvl=grdLvl.mul(100).round(2).astype(str) + '%'
+	grdLvl=grdLvl.reset_index()
+	grdLvl =grdLvl.pivot(index='School_Short',
 									columns= 'Grade Level',
 									values='Percent_On_Above')
 
 
-	grade_lvl_dist=pd.crosstab([vs_obj.df['Grade Level']],[vs_obj.df['Overall Relative Placement']], 
+	grdLvlDist=pd.crosstab([vs_obj.df['Grade Level']],[vs_obj.df['Overall Relative Placement']], 
 						values=vs_obj.df.Student_Number, aggfunc='count',normalize='index')
-	grade_lvl_dist_count=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[vs_obj.df['Overall Relative Placement']], 
+	grdLvlDistCount=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[vs_obj.df['Overall Relative Placement']], 
 						values=vs_obj.df.Student_Number, aggfunc='count')
 
-	grade_lvl_dist_count=grade_lvl_dist_count.fillna(0)
-	grade_lvl_dist['Percent_On_Above']=grade_lvl_dist['Early On Grade Level']+grade_lvl_dist['Mid or Above Grade Level']
+	grdLvlDistCount=grdLvlDistCount.fillna(0)
+	grdLvlDist['Percent_On_Above']=grdLvlDist['Early On Grade Level']+grdLvlDist['Mid or Above Grade Level']
 	drop_cols=['1 Grade Level Below', '2 Grade Levels Below', '3 or More Grade Levels Below','Early On Grade Level','Mid or Above Grade Level']
 	for col in drop_cols:
-		if col in grade_lvl_dist.columns:
-			grade_lvl_dist =grade_lvl_dist.drop(col, axis=1)
-	grade_lvl_dist=grade_lvl_dist.mul(100).round(2).astype(str) + '%'
-	grade_lvl_dist=grade_lvl_dist.rename(columns={'Percent_On_Above':'District'})
-	grade_lvl_dist=grade_lvl_dist.T
+		if col in grdLvlDist.columns:
+			grdLvlDist =grdLvlDist.drop(col, axis=1)
+	grdLvlDist=grdLvlDist.mul(100).round(2).astype(str) + '%'
+	grdLvlDist=grdLvlDist.rename(columns={'Percent_On_Above':'District'})
+	grdLvlDist=grdLvlDist.T
 	
-	grade_lvl=pd.concat([grade_lvl, grade_lvl_dist])
+	grdLvl=pd.concat([grdLvl, grdLvlDist])
 	
-	grade_lvl=gradeLevelAddColumns(vs_obj, grade_lvl)
-	gradeLevelTab.append(grade_lvl)
+	grdLvl=gradeLevelAddColumns(vs_obj, grdLvl)
+	gradeLevelTab.append(grdLvl)
 	
 	#Race for District Totals
-	iR_GL_race=pd.crosstab([vs_obj.df['Race_Ethn']],[vs_obj.df['Overall Relative Placement']], values=vs_obj.df.Student_Number, aggfunc='count',margins=True)
-	iR_GL_race=iR_GL_race.fillna(0)
-	iR_GL_race['On or Above']=iR_GL_race['Early On Grade Level']+iR_GL_race['Mid or Above Grade Level']
-	iR_GL_race['Percent_On_Above']=(iR_GL_race['On or Above']/iR_GL_race['All']).mul(100).round(1).astype(str)+"%"
-	iR_GL_race['Percent_On_Above'] = np.where((iR_GL_race['All']) <= 10,'*',iR_GL_race['Percent_On_Above'])
-	iR_GL_race=iR_GL_race.drop(columns=['All','On or Above','Early On Grade Level','Mid or Above Grade Level','1 Grade Level Below','2 Grade Levels Below','3 or More Grade Levels Below'])
-	iR_GL_race=iR_GL_race.rename(columns={'Percent_On_Above':'District'})
-	iR_GL_race=iR_GL_race.T
-	iR_GL_race.index.name='School_Short'
+	irGLRace=pd.crosstab([vs_obj.df['Race_Ethn']],[vs_obj.df['Overall Relative Placement']], values=vs_obj.df.Student_Number, aggfunc='count',margins=True)
+	irGLRace=irGLRace.fillna(0)
+	irGLRace['On or Above']=irGLRace['Early On Grade Level']+irGLRace['Mid or Above Grade Level']
+	irGLRace['Percent_On_Above']=(irGLRace['On or Above']/irGLRace['All']).mul(100).round(1).astype(str)+"%"
+	irGLRace['Percent_On_Above'] = np.where((irGLRace['All']) <= 10,'*',irGLRace['Percent_On_Above'])
+	irGLRace=irGLRace.drop(columns=['All','On or Above','Early On Grade Level','Mid or Above Grade Level','1 Grade Level Below','2 Grade Levels Below','3 or More Grade Levels Below'])
+	irGLRace=irGLRace.rename(columns={'Percent_On_Above':'District'})
+	irGLRace=irGLRace.T
+	irGLRace.index.name='School_Short'
 
 
 	#Race iReady GL vs_obj.df2022
-	rslt_race_GL_Count=pd.crosstab([vs_obj.df.School_Short, vs_obj.df.Race_Ethn],[vs_obj.df['Overall Relative Placement']], values=vs_obj.df.Student_Number, aggfunc='count', margins=True)
-	rslt_race_GL=pd.crosstab([vs_obj.df.School_Short, vs_obj.df.Race_Ethn],[vs_obj.df['Overall Relative Placement']], values=vs_obj.df.Student_Number, aggfunc='count',normalize='index', margins=True).mul(100).round(1)
+	rsltRaceGLCount=pd.crosstab([vs_obj.df.School_Short, vs_obj.df.Race_Ethn],[vs_obj.df['Overall Relative Placement']], values=vs_obj.df.Student_Number, aggfunc='count', margins=True)
+	rsltRaceGL=pd.crosstab([vs_obj.df.School_Short, vs_obj.df.Race_Ethn],[vs_obj.df['Overall Relative Placement']], values=vs_obj.df.Student_Number, aggfunc='count',normalize='index', margins=True).mul(100).round(1)
 		
-	rslt_race_GL=rslt_race_GL.fillna(0)
+	rsltRaceGL=rsltRaceGL.fillna(0)
 	
-	if '3 or More Grade Levels Below' in rslt_race_GL.columns:
-		rslt_race_GL['Below']=rslt_race_GL['1 Grade Level Below']+rslt_race_GL['2 Grade Levels Below']+rslt_race_GL['3 or More Grade Levels Below']
+	if '3 or More Grade Levels Below' in rsltRaceGL.columns:
+		rsltRaceGL['Below']=rsltRaceGL['1 Grade Level Below']+rsltRaceGL['2 Grade Levels Below']+rsltRaceGL['3 or More Grade Levels Below']
 	else:
-		rslt_race_GL['Below']=rslt_race_GL['1 Grade Level Below']+rslt_race_GL['2 Grade Levels Below']
-	rslt_race_GL['Percent_On_Above']=rslt_race_GL['Early On Grade Level']+rslt_race_GL['Mid or Above Grade Level']
-	#rslt_race_GL['total_count']=rslt_race_GL['On or Above']+rslt_race_GL['Below']
-	rslt_race_GL['total_count']=rslt_race_GL_Count['All']
+		rsltRaceGL['Below']=rsltRaceGL['1 Grade Level Below']+rsltRaceGL['2 Grade Levels Below']
+	rsltRaceGL['Percent_On_Above']=rsltRaceGL['Early On Grade Level']+rsltRaceGL['Mid or Above Grade Level']
+	#rsltRaceGL['totalCount']=rsltRaceGL['On or Above']+rsltRaceGL['Below']
+	rsltRaceGL['totalCount']=rsltRaceGLCount['All']
 
-	rslt_race_GL.loc[rslt_race_GL['total_count'] <= 10, 'Percent_On_Above'] = -1
-	rslt_race_GL=rslt_race_GL.replace(to_replace="-1",value="*").replace(to_replace="nan%",value="")
+	rsltRaceGL.loc[rsltRaceGL['totalCount'] <= 10, 'Percent_On_Above'] = -1
+	rsltRaceGL=rsltRaceGL.replace(to_replace="-1",value="*").replace(to_replace="nan%",value="")
 	
-	rslt_race_GL=rslt_race_GL.reset_index()
+	rsltRaceGL=rsltRaceGL.reset_index()
 
-	rslt_race_GL_pivt = rslt_race_GL.pivot(index='School_Short',
+	rsltRaceGL_pivt = rsltRaceGL.pivot(index='School_Short',
 								columns= 'Race_Ethn',
 								values='Percent_On_Above').round(1).astype(str)+"%"
 	
-	rslt_race_GL_pivt=rslt_race_GL_pivt.replace(to_replace="nan%",value="").replace(to_replace="-1.0%",value="*")
+	rsltRaceGL_pivt=rsltRaceGL_pivt.replace(to_replace="nan%",value="").replace(to_replace="-1.0%",value="*")
 	
 	rename={}
 	races={'African_American':'AA', 'American_Indian':'AI','American Indian':'AI','Asian':'A', 'Filipino':'F', 'Hispanic':'HL', 'Mult':'Mult',
 	  		'Pac_Islander':'PI', 'White':'W', 'All':'ALL', 'District':'District'}
-	for col in rslt_race_GL_pivt.columns:
+	for col in rsltRaceGL_pivt.columns:
 		if col in races.keys():		
 			temp_col = vs_obj.assessment_type+vs_obj.subjects[0]+'GradeLevel '+races[col]+"_"+vs_obj.terms[0]
 			rename[col]=temp_col
 		
-	rslt_race_GL_pivt.rename(columns=rename, inplace=True)
-	iR_GL_race.rename(columns=rename, inplace=True)
+	rsltRaceGL_pivt.rename(columns=rename, inplace=True)
+	irGLRace.rename(columns=rename, inplace=True)
 	
 	
-	#appends iR_GL_race for District totatl to rslt_race_GL_pivt which has by school totals
-	frames=[rslt_race_GL_pivt, iR_GL_race]
-	rslt_race_Final=pd.concat(frames,
+	#appends irGLRace for District totatl to rsltRaceGL_pivt which has by school totals
+	frames=[rsltRaceGL_pivt, irGLRace]
+	rsltRaceFinal=pd.concat(frames,
 						    axis=0,
 						    join="outer",
 						    ignore_index=False,
@@ -1453,7 +1373,7 @@ def iReadyGradeLevel(vs_obj,finalDfs):
 		
 
 	finalDfs.append(rslt)
-	finalDfs.append(rslt_race_Final)
+	finalDfs.append(rsltRaceFinal)
 	
 	subgroups(vs_obj,0,finalDfs)
 
@@ -1467,40 +1387,40 @@ def iReadySpan(vs_obj, finalDfs):
 		springWindowFilter(vs_obj)
 		
 		
-		rslt_count=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df["Overall Spanish Placement"]], values=vs_obj.df["Overall Spanish Placement"], aggfunc='count', margins=True, margins_name='All')
+		rsltCount=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df["Overall Spanish Placement"]], values=vs_obj.df["Overall Spanish Placement"], aggfunc='count', margins=True, margins_name='All')
 		rslt=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df["Overall Spanish Placement"]], values=vs_obj.df["Overall Spanish Placement"], aggfunc='count',normalize='index', margins=True, margins_name='All').mul(100).round(1).astype(str)+"%"
-		idx_rename = {'All':'District'}
-		col_rename = {'Met': vs_obj.assessment_type+vs_obj.subjects[0]+vs_obj.metrics[0]+" ALL_"+vs_obj.terms[0]}
-		rslt = rslt.rename(index=idx_rename).rename(columns=col_rename)
-		rslt['iReadySPReadSpPLMNT ALL_SP2023'] = np.where((rslt_count['All']) <= 10,'*',rslt['iReadySPReadSpPLMNT ALL_SP2023'])
+		idxRename = {'All':'District'}
+		colRename = {'Met': vs_obj.assessment_type+vs_obj.subjects[0]+vs_obj.metrics[0]+" ALL_"+vs_obj.terms[0]}
+		rslt = rslt.rename(index=idxRename).rename(columns=colRename)
+		rslt['iReadySPReadSpPLMNT ALL_SP2023'] = np.where((rsltCount['All']) <= 10,'*',rslt['iReadySPReadSpPLMNT ALL_SP2023'])
 
 		#grade level
 
-		grade_lvl=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[vs_obj.df["Overall Spanish Placement"]],margins=True)
+		grdLvl=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[vs_obj.df["Overall Spanish Placement"]],margins=True)
 
-		grade_lvl['Percentage Proficient']=(grade_lvl['Met']/grade_lvl['All']).mul(100).round(1).astype(str) + '%'
-		grade_lvl['Percentage Proficient'] = np.where((grade_lvl['All']) <= 10,'*',grade_lvl['Percentage Proficient'])
-		grade_lvl=grade_lvl.reset_index()
-		grade_lvl=grade_lvl.pivot(index='School_Short',
+		grdLvl['Percentage Proficient']=(grdLvl['Met']/grdLvl['All']).mul(100).round(1).astype(str) + '%'
+		grdLvl['Percentage Proficient'] = np.where((grdLvl['All']) <= 10,'*',grdLvl['Percentage Proficient'])
+		grdLvl=grdLvl.reset_index()
+		grdLvl=grdLvl.pivot(index='School_Short',
 									columns= 'Grade Level',
 									values='Percentage Proficient')
 
-		grade_lvl=grade_lvl.drop(['All'])
+		grdLvl=grdLvl.drop(['All'])
 
-		dist_grd_lvl=pd.crosstab([vs_obj.df['Grade Level']],[vs_obj.df["Overall Spanish Placement"]], values=vs_obj.df["Overall Spanish Placement"], aggfunc='count',normalize='index', margins=True, margins_name='All').mul(100).round(1).astype(str)+"%"
+		distGrdLvl=pd.crosstab([vs_obj.df['Grade Level']],[vs_obj.df["Overall Spanish Placement"]], values=vs_obj.df["Overall Spanish Placement"], aggfunc='count',normalize='index', margins=True, margins_name='All').mul(100).round(1).astype(str)+"%"
 		
 		cols= {'Met': 'District'}
-		dist_grd_lvl = dist_grd_lvl.rename(columns=cols)
-		dist_grd_lvl=dist_grd_lvl.drop(columns=['Not Met','Partially Met'])
-		dist_grd_lvl=dist_grd_lvl.T
-		dist_grd_lvl.index.name='School_Short'
+		distGrdLvl = distGrdLvl.rename(columns=cols)
+		distGrdLvl=distGrdLvl.drop(columns=['Not Met','Partially Met'])
+		distGrdLvl=distGrdLvl.T
+		distGrdLvl.index.name='School_Short'
 
-		grade_lvl = pd.concat([grade_lvl, dist_grd_lvl])
-		grade_lvl.index.name='School_Short'
+		grdLvl = pd.concat([grdLvl, distGrdLvl])
+		grdLvl.index.name='School_Short'
 		
 	
-		grade_lvl=gradeLevelAddColumns(vs_obj, grade_lvl)
-		gradeLevelTab.append(grade_lvl)
+		grdLvl=gradeLevelAddColumns(vs_obj, grdLvl)
+		gradeLevelTab.append(grdLvl)
 
 		finalDfs.append(rslt)
 
@@ -1517,41 +1437,38 @@ def iReadySpan(vs_obj, finalDfs):
 		for column in [vs_obj.df.Foster, vs_obj.df.SPED, vs_obj.df.EL]:
 
 			#tableframe = pd.pivot_table(vs_obj.df, values=['Typical and High','LowHigh'], index=['School_Short', column], aggfunc=np.sum)
-			sub_rslt=pd.crosstab([vs_obj.df.School_Short, column],[vs_obj.df["Overall Spanish Placement"]], values=vs_obj.df["Overall Spanish Placement"], aggfunc='count', margins=True, margins_name='All')
-			idx_rename = {'All':'District'}
+			subRslt=pd.crosstab([vs_obj.df.School_Short, column],[vs_obj.df["Overall Spanish Placement"]], values=vs_obj.df["Overall Spanish Placement"], aggfunc='count', margins=True, margins_name='All')
+			idxRename = {'All':'District'}
 			
 			
-			sub_rslt.reset_index(inplace=True)
+			subRslt.reset_index(inplace=True)
 			
-			if 'SPED' in sub_rslt.columns:
-				sub_rslt = sub_rslt[sub_rslt['SPED'] == 'Y']
+			if 'SPED' in subRslt.columns:
+				subRslt = subRslt[subRslt['SPED'] == 'Y']
 				
 			
-			elif 'EL' in sub_rslt.columns:
-				sub_rslt = sub_rslt[sub_rslt['EL'] == 'Y']
+			elif 'EL' in subRslt.columns:
+				subRslt = subRslt[subRslt['EL'] == 'Y']
 
-			elif 'Foster' in sub_rslt.columns:
-				sub_rslt = sub_rslt[sub_rslt['Foster'] == 'Y']
+			elif 'Foster' in subRslt.columns:
+				subRslt = subRslt[subRslt['Foster'] == 'Y']
 
-				
-		
+			subRslt.loc['District'] = subRslt.iloc[:, :].sum()
 
-			sub_rslt.loc['District'] = sub_rslt.iloc[:, :].sum()
-			
-			sub_rslt['Percentage Proficient']=(sub_rslt['Met']/sub_rslt['All']).mul(100).round(1).astype(str) + '%'
-			sub_rslt['Percentage Proficient'] = np.where((sub_rslt['All']) <= 10,'*',sub_rslt['Percentage Proficient'])
-			sub_rslt=sub_rslt.reset_index()
+			subRslt['Percentage Proficient']=(subRslt['Met']/subRslt['All']).mul(100).round(1).astype(str) + '%'
+			subRslt['Percentage Proficient'] = np.where((subRslt['All']) <= 10,'*',subRslt['Percentage Proficient'])
+			subRslt=subRslt.reset_index()
 			
 		
-			col_rename = {'Percentage Proficient': vs_obj.assessment_type+vs_obj.subjects[0]+vs_obj.metrics[0]+" "+column.name+"_"+vs_obj.terms[0]}
-			sub_rslt = sub_rslt.rename(index=idx_rename).rename(columns=col_rename)
+			colRename = {'Percentage Proficient': vs_obj.assessment_type+vs_obj.subjects[0]+vs_obj.metrics[0]+" "+column.name+"_"+vs_obj.terms[0]}
+			subRslt = subRslt.rename(index=idxRename).rename(columns=colRename)
 			
-			#sub_rslt.loc[sub_rslt.index[-1], column.name]=''
+			#subRslt.loc[subRslt.index[-1], column.name]=''
 			
-			sub_rslt.loc[sub_rslt.index[-1], 'School_Short']='District'
-			sub_rslt=sub_rslt.set_index('School_Short')
+			subRslt.loc[subRslt.index[-1], 'School_Short']='District'
+			subRslt=subRslt.set_index('School_Short')
 			
-			finalDfs.append(sub_rslt)
+			finalDfs.append(subRslt)
 
 	
 def iReadyGrw(vs_obj,finalDfs):
@@ -1566,72 +1483,61 @@ def iReadyGrw(vs_obj,finalDfs):
 		vs_obj.df = vs_obj.df.replace(r'^\s*$', np.nan, regex=True)
 		grw_column = 'Percent Progress to Annual Typical Growth (%)'
 		
-			
 	if 'SP2023' in vs_obj.terms[0]:
 		vs_obj.df=vs_obj.df[vs_obj.columns]
 		iReadyFilter(vs_obj)
 		springWindowFilter(vs_obj)
 		grw_column = 'Percent Progress to Annual Typical Growth (%)'
 
-
-
 	#GRW = vs_obj.df.groupby(["School_Short"])["Percent Progress to Annual Typical Growth (%)"].median().reset_index(name="median")
 
 	rslt=pd.crosstab([vs_obj.df.School_Short],vs_obj.df[grw_column], values=vs_obj.df[grw_column], aggfunc='median',margins=True, margins_name='Total').astype(str)+"%"
 	rslt=rslt.reset_index().set_index('School_Short')
 
-	
-	idx_rename = {'Total':'District'}
-	col_rename = {'Total': vs_obj.assessment_type+vs_obj.subjects[0]+vs_obj.metrics[0]+" ALL_"+vs_obj.terms[0]}
-	rslt = rslt.rename(index=idx_rename).rename(columns=col_rename)
+	idxRename = {'Total':'District'}
+	colRename = {'Total': vs_obj.assessment_type+vs_obj.subjects[0]+vs_obj.metrics[0]+" ALL_"+vs_obj.terms[0]}
+	rslt = rslt.rename(index=idxRename).rename(columns=colRename)
 	rslt=rslt.filter(['School_Short', 'iReadyReadGRW ALL_SP2023'], axis=1)
 	
-	GRW_race_count = pd.crosstab([vs_obj.df.School_Short],[vs_obj.df.Race_Ethn], values=vs_obj.df[grw_column], aggfunc='count', margins=True, margins_name='District')
+	grwRaceCount = pd.crosstab([vs_obj.df.School_Short],[vs_obj.df.Race_Ethn], values=vs_obj.df[grw_column], aggfunc='count', margins=True, margins_name='District')
 	
 	rename={}
 	races={'African_American':'AA', 'American_Indian':'AI','American Indian':'AI','Asian':'A', 'Filipino':'F', 'Hispanic':'HL', 'Mult':'Mult',
    			'Pac_Islander':'PI', 'White':'W'}
-	for col in GRW_race_count.columns:
+	for col in grwRaceCount.columns:
 		if col in races.keys():		
 			temp_col = races[col]+"_COUNT"
 			rename[col]=temp_col
 	
-	GRW_race_count.rename(columns=rename, inplace=True)
-	GRW_race=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df.Race_Ethn], values=vs_obj.df[grw_column], aggfunc='median',margins=True, margins_name='Total')
+	grwRaceCount.rename(columns=rename, inplace=True)
+	grwRace=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df.Race_Ethn], values=vs_obj.df[grw_column], aggfunc='median',margins=True, margins_name='Total')
 	
-	GRW_GradeLevel=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df['Grade Level']], values=vs_obj.df[grw_column], aggfunc='median',margins=True, margins_name='Total')
+	grwGrdLvl=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df['Grade Level']], values=vs_obj.df[grw_column], aggfunc='median',margins=True, margins_name='Total')
 
-	idx_rename = {'Total':'District'}
-	GRW_GradeLevel = GRW_GradeLevel.rename(index=idx_rename)
+	idxRename = {'Total':'District'}
+	grwGrdLvl = grwGrdLvl.rename(index=idxRename)
+	grwGrdLvl= grwGrdLvl.astype(str)+"%"
+	grwGrdLvl=grwGrdLvl.replace(to_replace="*%",value = "*").replace(to_replace="nan%", value="")
+	grwGrdLvl=gradeLevelAddColumns(vs_obj, grwGrdLvl)
+	gradeLevelTab.append(grwGrdLvl)
 	
-
-	GRW_GradeLevel= GRW_GradeLevel.astype(str)+"%"
-	GRW_GradeLevel=GRW_GradeLevel.replace(to_replace="*%",value = "*").replace(to_replace="nan%", value="")
-	GRW_GradeLevel=gradeLevelAddColumns(vs_obj, GRW_GradeLevel)
-	gradeLevelTab.append(GRW_GradeLevel)
+	idxRename = {'Total':'District'}
+	colRename = {'Total': vs_obj.assessment_type+vs_obj.subjects[0]+vs_obj.metrics[0]+" ALL_"+vs_obj.terms[0]}
+	grwRace = grwRace.rename(index=idxRename).rename(columns=colRename)
 	
-	
-
-
-	idx_rename = {'Total':'District'}
-	col_rename = {'Total': vs_obj.assessment_type+vs_obj.subjects[0]+vs_obj.metrics[0]+" ALL_"+vs_obj.terms[0]}
-	GRW_race = GRW_race.rename(index=idx_rename).rename(columns=col_rename)
-	
-	GRW_race= GRW_race.astype(str)+"%"
-	GRW_race=GRW_race.replace(to_replace="*%",value = "*").replace(to_replace="nan%", value="")
+	grwRace= grwRace.astype(str)+"%"
+	grwRace=grwRace.replace(to_replace="*%",value = "*").replace(to_replace="nan%", value="")
 	
 	rename={}
 	races={'African_American':'AA', 'American_Indian':'AI','American Indian':'AI','Asian':'A', 'Filipino':'F', 'Hispanic':'HL', 'Mult':'Mult',
    			'Pac_Islander':'PI', 'White':'W'}
-	for col in GRW_race.columns:
+	for col in grwRace.columns:
 		if col in races.keys():		
 			temp_col = vs_obj.assessment_type+vs_obj.subjects[0]+vs_obj.metrics[0]+" "+races[col]+"_"+vs_obj.terms[0]
 			rename[col]=temp_col
 	
-	GRW_race.rename(columns=rename, inplace=True)
-	
-
-	Final=GRW_race.merge(GRW_race_count, how='inner', on='School_Short')
+	grwRace.rename(columns=rename, inplace=True)
+	Final=grwRace.merge(grwRaceCount, how='inner', on='School_Short')
 	
 	cols={'iReadyMathGRW AA_W2022':'AA_COUNT', 'iReadyMathGRW AI_W2022':'AI_COUNT',
    	'iReadyMathGRW A_W2022':'A_COUNT', 'iReadyMathGRW F_W2022':'F_COUNT',
@@ -1664,7 +1570,6 @@ def iReadyGrw(vs_obj,finalDfs):
 	
 	finalDfs.append(Final)
 	
-
 	#GRW Subgroups
 	vs_obj.df.loc[vs_obj.df['SPED'] =='ESN', 'SPED'] = 'Y'
 	vs_obj.df.loc[vs_obj.df['SPED']=='MMSN', 'SPED'] = 'Y'
@@ -1676,84 +1581,78 @@ def iReadyGrw(vs_obj,finalDfs):
 
 	for column in [vs_obj.df.Foster,vs_obj.df.SPED, vs_obj.df.EL, vs_obj.df.FIT]:
 		
-			sub_rslt=pd.crosstab([vs_obj.df.School_Short, column],[vs_obj.df['Percent Progress to Annual Typical Growth (%)']], values=vs_obj.df['Percent Progress to Annual Typical Growth (%)'], aggfunc='median', margins=True, margins_name='All')
-			sub_count=pd.crosstab([vs_obj.df.School_Short, column],[vs_obj.df['Percent Progress to Annual Typical Growth (%)']], values=vs_obj.df['Percent Progress to Annual Typical Growth (%)'], aggfunc='count', margins=True, margins_name='All')
-			sub_rslt=sub_rslt.reset_index().set_index('School_Short')
-			sub_rslt.loc[sub_rslt.index[-1], column.name]='Y'
-			sub_count=sub_count.filter(['School_Short', column.name, 'All'], axis=1)
+			subRslt=pd.crosstab([vs_obj.df.School_Short, column],[vs_obj.df['Percent Progress to Annual Typical Growth (%)']], values=vs_obj.df['Percent Progress to Annual Typical Growth (%)'], aggfunc='median', margins=True, margins_name='All')
+			subCount=pd.crosstab([vs_obj.df.School_Short, column],[vs_obj.df['Percent Progress to Annual Typical Growth (%)']], values=vs_obj.df['Percent Progress to Annual Typical Growth (%)'], aggfunc='count', margins=True, margins_name='All')
+			subRslt=subRslt.reset_index().set_index('School_Short')
+			subRslt.loc[subRslt.index[-1], column.name]='Y'
+			subCount=subCount.filter(['School_Short', column.name, 'All'], axis=1)
 
-			sub_count=sub_count.reset_index()
-			sub_count['School_Short']=sub_count['School_Short']+"_"+sub_count[column.name]
+			subCount=subCount.reset_index()
+			subCount['School_Short']=subCount['School_Short']+"_"+subCount[column.name]
 			
-			sub_count['School_Short']=sub_count['School_Short'].ffill(axis = 0)
-			sub_count.loc[sub_count.index[-1], column.name]='Y'
-			sub_count=sub_count.rename(columns={'All':'CountAll'})
-			sub_rslt=sub_rslt.filter(['School_Short', column.name, 'All'], axis=1)
-			sub_rslt=sub_rslt.reset_index()
-			sub_rslt['School_Short']=sub_rslt['School_Short']+"_"+sub_rslt[column.name]
+			subCount['School_Short']=subCount['School_Short'].ffill(axis = 0)
+			subCount.loc[subCount.index[-1], column.name]='Y'
+			subCount=subCount.rename(columns={'All':'CountAll'})
+			subRslt=subRslt.filter(['School_Short', column.name, 'All'], axis=1)
+			subRslt=subRslt.reset_index()
+			subRslt['School_Short']=subRslt['School_Short']+"_"+subRslt[column.name]
 		
-			sub_rslt=sub_rslt.reset_index().set_index('School_Short')
-			sub_count=sub_count.reset_index().set_index('School_Short')
+			subRslt=subRslt.reset_index().set_index('School_Short')
+			subCount=subCount.reset_index().set_index('School_Short')
 			
-			sub_rslt=sub_rslt.merge(sub_count, how='inner', on='School_Short')
-			sub_rslt['All'] = np.where((sub_rslt['CountAll']) <= 10,'*',sub_rslt['All'])
-			sub_rslt['All']=sub_rslt['All'].astype(str)+"%"
-			sub_rslt=sub_rslt.filter(['School_Short', column.name, 'All'], axis=1)
+			subRslt=subRslt.merge(subCount, how='inner', on='School_Short')
+			subRslt['All'] = np.where((subRslt['CountAll']) <= 10,'*',subRslt['All'])
+			subRslt['All']=subRslt['All'].astype(str)+"%"
+			subRslt=subRslt.filter(['School_Short', column.name, 'All'], axis=1)
 
-			#idx_rename = {'All':'District'}
-			#sub_rslt=sub_rslt.drop(index='All')
-			sub_rslt.reset_index(inplace=True)
-			sub_rslt[column.name]=sub_rslt['School_Short'].str.contains("_Y")
-			sub_rslt = sub_rslt[sub_rslt[column.name] == True]
+			#idxRename = {'All':'District'}
+			#subRslt=subRslt.drop(index='All')
+			subRslt.reset_index(inplace=True)
+			subRslt[column.name]=subRslt['School_Short'].str.contains("_Y")
+			subRslt = subRslt[subRslt[column.name] == True]
 
-			#sub_rslt.reset_index(inplace=True)
+			#subRslt.reset_index(inplace=True)
 			
-			sub_rslt=sub_rslt.rename(columns = {'All': vs_obj.assessment_type+vs_obj.subjects[0]+"GRW "+column.name+"_"+vs_obj.terms[0]})
-			sub_rslt['School_Short'] =sub_rslt['School_Short'].replace({'Bayview_Y': 'Bayview', 'Chavez_Y': 'Chavez', 'Dover_Y': 'Dover', 'Grant_Y': 'Grant',
+			subRslt=subRslt.rename(columns = {'All': vs_obj.assessment_type+vs_obj.subjects[0]+"GRW "+column.name+"_"+vs_obj.terms[0]})
+			subRslt['School_Short'] =subRslt['School_Short'].replace({'Bayview_Y': 'Bayview', 'Chavez_Y': 'Chavez', 'Dover_Y': 'Dover', 'Grant_Y': 'Grant',
 											'Helms_Y':'Helms','Murphy_Y':'Murphy','Obama_Y':'Obama','Ohlone_Y':'Ohlone','Peres_Y':'Peres'
 											,'Shannon_Y':'Shannon','Stewart_Y':'Stewart','Valley View_Y':'Valley View','Virtual K-12_Y':'Virtual K-12'})
-			sub_rslt=sub_rslt.set_index('School_Short')
+			subRslt=subRslt.set_index('School_Short')
 			dfs=[]
 			#DISTRICT TOTAL
-			if column.name == 'SPED':	#if 'SPED' in vs_obj.df.columns:
-				SPED_dist_total = vs_obj.df[vs_obj.df['SPED'] == 'Y']
-				dfs.append(SPED_dist_total)
-			#if 'EL' in table.columns
+			if column.name == 'SPED':	
+				SPEDDist_total = vs_obj.df[vs_obj.df['SPED'] == 'Y']
+				dfs.append(SPEDDist_total)
+		
 			elif column.name == 'EL':
-				EL_dist_total = vs_obj.df[vs_obj.df['EL'] == 'Y']
-				dfs.append(EL_dist_total)
-			#if 'EL' in table.columns:
+				ELDist_total = vs_obj.df[vs_obj.df['EL'] == 'Y']
+				dfs.append(ELDist_total)
+		
 			elif column.name ==  'FIT':
-				FIT_dist_total = vs_obj.df[vs_obj.df['FIT'] == 'Y']
-				dfs.append(FIT_dist_total)
+				FITDist_total = vs_obj.df[vs_obj.df['FIT'] == 'Y']
+				dfs.append(FITDist_total)
 
 			elif column.name ==  'Foster':
-				FIT_dist_total = vs_obj.df[vs_obj.df['Foster'] == 'Y']
-				dfs.append(FIT_dist_total)
+				FITDist_total = vs_obj.df[vs_obj.df['Foster'] == 'Y']
+				dfs.append(FITDist_total)
 			
 			for df in dfs:
 				dist_total=pd.crosstab([column],[df['Percent Progress to Annual Typical Growth (%)']], values=df['Percent Progress to Annual Typical Growth (%)'], aggfunc='median', margins=True, margins_name='All')
-				dist_count=pd.crosstab([column],[df['Percent Progress to Annual Typical Growth (%)']], values=df['Percent Progress to Annual Typical Growth (%)'], aggfunc='count', margins=True, margins_name='All')
+				distCount=pd.crosstab([column],[df['Percent Progress to Annual Typical Growth (%)']], values=df['Percent Progress to Annual Typical Growth (%)'], aggfunc='count', margins=True, margins_name='All')
 			
 				dist_total=dist_total.rename(index={'Y':'District'})
 			
 				dist_total.index.rename('School_Short', inplace=True)
-				dist_total=dist_total.reset_index()
-			
-			
+				dist_total=dist_total.reset_index()		
 				dist_total=dist_total[['School_Short','All']]
 				dist_total = dist_total[dist_total['School_Short'] == 'District']
 				dist_total=dist_total.rename(columns={'All': vs_obj.assessment_type+vs_obj.subjects[0]+"GRW "+column.name+"_"+vs_obj.terms[0]})
 
-
-
 				dist_total=dist_total.set_index('School_Short')
-				sub_rslt=pd.concat([sub_rslt, dist_total], axis=0)
-				sub_rslt=sub_rslt.replace(to_replace="*%", value="*")
-				print(sub_rslt)
-				finalDfs.append(sub_rslt)
-	
-	
+				subRslt=pd.concat([subRslt, dist_total], axis=0)
+				subRslt=subRslt.replace(to_replace="*%", value="*")
+				
+				finalDfs.append(subRslt)
 	
 
 def starDB(vs_obj,finalDfs):
@@ -1767,53 +1666,49 @@ def starDB(vs_obj,finalDfs):
 	
 	rslt_percentage=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df.DistrictBenchmarkCategoryName], values=vs_obj.df.Student_Number, aggfunc='count',margins=True, margins_name='District', normalize='index').mul(100).round(1).astype('str')+'%'
 	
-
-	grade_lvl=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[vs_obj.df['DistrictBenchmarkCategoryName']], 
+	grdLvl=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[vs_obj.df['DistrictBenchmarkCategoryName']], 
 						values=vs_obj.df.Student_Number, aggfunc='count', margins=True)
-	grade_lvl.loc[grade_lvl['All'] <= 10, 'At/Above Benchmark'] = -1
-	grade_lvl.reset_index()
-	grade_lvl['Percent_AtorAbove']=(grade_lvl['At/Above Benchmark']/grade_lvl['All']).mul(100).round(1)
-	grade_lvl.loc[grade_lvl['Percent_AtorAbove'] < 0, 'Percent_AtorAbove'] = "*"
+	grdLvl.loc[grdLvl['All'] <= 10, 'At/Above Benchmark'] = -1
+	grdLvl.reset_index()
+	grdLvl['Percent_AtorAbove']=(grdLvl['At/Above Benchmark']/grdLvl['All']).mul(100).round(1)
+	grdLvl.loc[grdLvl['Percent_AtorAbove'] < 0, 'Percent_AtorAbove'] = "*"
 	
-	grade_lvl =grade_lvl.drop(['Intervention', 'On Watch', 'Urgent Intervention', 'All'], axis=1)
-	grade_lvl=grade_lvl.astype(str) + '%'
-	grade_lvl=grade_lvl.reset_index()
+	grdLvl =grdLvl.drop(['Intervention', 'On Watch', 'Urgent Intervention', 'All'], axis=1)
+	grdLvl=grdLvl.astype(str) + '%'
+	grdLvl=grdLvl.reset_index()
 
-	grade_lvl = grade_lvl.pivot(index='School_Short',
+	grdLvl = grdLvl.pivot(index='School_Short',
 									columns= 'Grade Level',
 									values='Percent_AtorAbove')
 
-
-	idx_rename = {'All':'District'} 
-	grade_lvl = grade_lvl.rename(index=idx_rename)
-	grade_lvl=grade_lvl.replace(to_replace="*%",value="*").replace(to_replace="nan%",value="*")
-	grade_lvl=grade_lvl.reset_index().set_index('School_Short')
-	grade_lvl=grade_lvl.drop(['District'])
-
+	idxRename = {'All':'District'} 
+	grdLvl = grdLvl.rename(index=idxRename)
+	grdLvl=grdLvl.replace(to_replace="*%",value="*").replace(to_replace="nan%",value="*")
+	grdLvl=grdLvl.reset_index().set_index('School_Short')
+	grdLvl=grdLvl.drop(['District'])
 
 	#adding distric total for Grade Level tab
-	dist_grade_lvl_DB=pd.crosstab([vs_obj.df['Grade Level']],[vs_obj.df['DistrictBenchmarkCategoryName']],margins=True, normalize='index').mul(100).round(1).astype(str)+"%"
+	distGrdLvlDB=pd.crosstab([vs_obj.df['Grade Level']],[vs_obj.df['DistrictBenchmarkCategoryName']],margins=True, normalize='index').mul(100).round(1).astype(str)+"%"
 	rename_col={'At/Above Benchmark':'District'}
 	rename={'Grade Level':'School_Short'}
-	dist_grade_lvl_DB=dist_grade_lvl_DB.rename(columns=rename_col).drop(columns=['Intervention','On Watch','Urgent Intervention'])
+	distGrdLvlDB=distGrdLvlDB.rename(columns=rename_col).drop(columns=['Intervention','On Watch','Urgent Intervention'])
 	
-	dist_grade_lvl_DB=dist_grade_lvl_DB.T
+	distGrdLvlDB=distGrdLvlDB.T
 	
-	dist_grade_lvl_DB.index.name='School_Short'
+	distGrdLvlDB.index.name='School_Short'
 	
-	grade_lvl = pd.concat([grade_lvl, dist_grade_lvl_DB])
-	grade_lvl.index.name='School_Short'
+	grdLvl = pd.concat([grdLvl, distGrdLvlDB])
+	grdLvl.index.name='School_Short'
 	
-	grade_lvl=gradeLevelAddColumns(vs_obj, grade_lvl)
-	gradeLevelTab.append(grade_lvl)
-	
+	grdLvl=gradeLevelAddColumns(vs_obj, grdLvl)
+	gradeLevelTab.append(grdLvl)
 
-	rslt_race_count=pd.crosstab([vs_obj.df.School_Short, vs_obj.df.Race_Ethn],[vs_obj.df.DistrictBenchmarkCategoryName], values=vs_obj.df.Student_Number, aggfunc='count',margins=True, margins_name='All')
-	rslt_race_count=rslt_race_count.drop(columns=['Intervention','On Watch', 'Urgent Intervention'])
-	rslt_race_count=rslt_race_count.reset_index()
+	rsltRaceCount=pd.crosstab([vs_obj.df.School_Short, vs_obj.df.Race_Ethn],[vs_obj.df.DistrictBenchmarkCategoryName], values=vs_obj.df.Student_Number, aggfunc='count',margins=True, margins_name='All')
+	rsltRaceCount=rsltRaceCount.drop(columns=['Intervention','On Watch', 'Urgent Intervention'])
+	rsltRaceCount=rsltRaceCount.reset_index()
 	
 	container=[]
-	for label, _df in rslt_race_count.groupby(['School_Short']):
+	for label, _df in rsltRaceCount.groupby(['School_Short']):
 		row_label=label+'_ALL'
 		_df.loc[row_label] = _df[['At/Above Benchmark','All']].sum()
 		container.append(_df)
@@ -1824,134 +1719,125 @@ def starDB(vs_obj,finalDfs):
 	df_summary.loc[df_summary['All'] <= 10, 'Percent_On_Above'] = -1
 	df_summary['School_Short'] = df_summary['School_Short'].ffill()
 	df_summary['Race_Ethn']=df_summary['Race_Ethn'].fillna('ALL')
-	rslt_race_count=df_summary.copy()
+	rsltRaceCount=df_summary.copy()
 
 	
-	rslt_race_count=rslt_race_count.reset_index()
+	rsltRaceCount=rsltRaceCount.reset_index()
 	
-	rslt_race = rslt_race_count.pivot(index='School_Short',
+	rsltRace = rsltRaceCount.pivot(index='School_Short',
 									columns= 'Race_Ethn',
 									values='Percent_On_Above').mul(100).round(1).astype('str')+"%"
-	rslt_race=rslt_race.replace(to_replace="nan%",value="").replace(to_replace="-100.0%",value="*")
+	rsltRace=rsltRace.replace(to_replace="nan%",value="").replace(to_replace="-100.0%",value="*")
 	
 	if 'EarlyLit' in vs_obj.subjects[0] and 'FA2022' in vs_obj.terms[0]:
 		rslt_percentage.rename(columns=STAREarlyLit_columnheadersFA22, inplace=True)
-		rslt_race.rename(columns=STAREarlyLit_columnheadersFA22, inplace=True)
-		rslt_race['STAREarlyLitDB ALL_FA2022']=rslt_percentage['STAREarlyLitDB ALL_FA2022']
+		rsltRace.rename(columns=STAREarlyLit_columnheadersFA22, inplace=True)
+		rsltRace['STAREarlyLitDB ALL_FA2022']=rslt_percentage['STAREarlyLitDB ALL_FA2022']
 	
 	if 'EarlyLit' in vs_obj.subjects[0] and 'W2022' in vs_obj.terms[0]:
 		rslt_percentage.rename(columns=STAREarlyLit_columnheadersW22, inplace=True)
-		rslt_race.rename(columns=STAREarlyLit_columnheadersW22, inplace=True)
-		rslt_race['STAREarlyLitDB ALL_W2022']=rslt_percentage['STAREarlyLitDB ALL_W2022']
+		rsltRace.rename(columns=STAREarlyLit_columnheadersW22, inplace=True)
+		rsltRace['STAREarlyLitDB ALL_W2022']=rslt_percentage['STAREarlyLitDB ALL_W2022']
 
 	#district totals
-	dist_race=pd.crosstab([vs_obj.df.Race_Ethn],[vs_obj.df.DistrictBenchmarkCategoryName], values=vs_obj.df.Student_Number, aggfunc='count',normalize='index',margins=True).mul(100).round(1).astype(str)+"%"
-	dist_race=dist_race.reset_index().set_index('Race_Ethn')
+	distRace=pd.crosstab([vs_obj.df.Race_Ethn],[vs_obj.df.DistrictBenchmarkCategoryName], values=vs_obj.df.Student_Number, aggfunc='count',normalize='index',margins=True).mul(100).round(1).astype(str)+"%"
+	distRace=distRace.reset_index().set_index('Race_Ethn')
 	dropped=['Intervention','On Watch','Urgent Intervention','']
 	
-	for col in dist_race.columns:
+	for col in distRace.columns:
 		if col in dropped:
-			dist_race=dist_race.drop(columns=col)
+			distRace=distRace.drop(columns=col)
 
-	dist_race=dist_race.T
-	dist_race=dist_race.rename(index={'At/Above Benchmark':'District'})
-	dist_race=dist_race.reset_index()
-	dist_race=dist_race.rename(columns={'DistrictBenchmarkCategoryName':'School_Short'})
+	distRace=distRace.T
+	distRace=distRace.rename(index={'At/Above Benchmark':'District'})
+	distRace=distRace.reset_index()
+	distRace=distRace.rename(columns={'DistrictBenchmarkCategoryName':'School_Short'})
 
 	rename={}
 	races={'African_American':'AA', 'American_Indian':'AI','American Indian':'AI','Asian':'A', 'Filipino':'F', 'Hispanic':'HL', 'Mult':'Mult',
        			'Pac_Islander':'PI', 'White':'W', 'All':'ALL','ALL':'ALL'}
-	for col in dist_race.columns:
+	for col in distRace.columns:
 		if col in races.keys():		
 			temp_col = "STAR"+vs_obj.subjects[0]+vs_obj.metrics[0]+" "+races[col]+"_"+vs_obj.terms[0]
 			rename[col]=temp_col
-	for col in rslt_race.columns:
+	for col in rsltRace.columns:
 		if col in races.keys():		
 			temp_col = "STAR"+vs_obj.subjects[0]+vs_obj.metrics[0]+" "+races[col]+"_"+vs_obj.terms[0]
 			rename[col]=temp_col
 	
-	frames=[dist_race,rslt_race]
+	frames=[distRace,rsltRace]
 	
-	dist_race.rename(columns=rename, inplace=True)
+	distRace.rename(columns=rename, inplace=True)
+	rsltRace.rename(columns=rename, inplace=True)
+	rsltRace=rsltRace.reset_index().set_index('School_Short')
+	distRace=distRace.reset_index().set_index('School_Short')
 	
-	rslt_race.rename(columns=rename, inplace=True)
-
-	rslt_race=rslt_race.reset_index().set_index('School_Short')
-	
-	dist_race=dist_race.reset_index().set_index('School_Short')
-	
-	rslt_race = pd.concat([rslt_race, dist_race])
-	
-	finalDfs.append(rslt_race)	
-	
+	rsltRace = pd.concat([rsltRace, distRace])
+	finalDfs.append(rsltRace)	
 	
 	subgroups(vs_obj,0,finalDfs)
 
-def newSubgroups(vs_obj, metric_column_index, subgroup_count, column):
+def newSubgroups(vs_obj, metric_column_index, subgroupCount, column):
 		if vs_obj.metrics[metric_column_index] == 'SGP':
 			pass
 		else:
-			subgroup_count.columns=['_'.join(col) for col in subgroup_count.columns.values]	
-			subgroup_count=subgroup_count.rename(columns={'Y_CHRONIC':'Y_Chronic','Y_SEVERE CHRONIC':'Y_Severe'})
-
+			subgroupCount.columns=['_'.join(col) for col in subgroupCount.columns.values]	
+			subgroupCount=subgroupCount.rename(columns={'Y_CHRONIC':'Y_Chronic','Y_SEVERE CHRONIC':'Y_Severe'})
 
 		if vs_obj.assessment_type == 'iReady':
-			subgroup_count=subgroup_count.fillna(0)
-			if ('Y_Mid or Above Grade Level' in subgroup_count.columns) and ('Y_Early On Grade Level' in subgroup_count.columns):		
-				subgroup_count['Y']=subgroup_count['Y_Early On Grade Level']+subgroup_count['Y_Mid or Above Grade Level']
-			elif 'Y_Early On Grade Level' in subgroup_count.columns:
-				subgroup_count['Y']=subgroup_count['Y_Early On Grade Level']
+			subgroupCount=subgroupCount.fillna(0)
+			if ('Y_Mid or Above Grade Level' in subgroupCount.columns) and ('Y_Early On Grade Level' in subgroupCount.columns):		
+				subgroupCount['Y']=subgroupCount['Y_Early On Grade Level']+subgroupCount['Y_Mid or Above Grade Level']
+			elif 'Y_Early On Grade Level' in subgroupCount.columns:
+				subgroupCount['Y']=subgroupCount['Y_Early On Grade Level']
 			else:
-				subgroup_count['Y']=0
+				subgroupCount['Y']=0
 
-			if 'Y_Level 4' in subgroup_count.columns:
-				subgroup_count['Y']=subgroup_count['Y_Level 3']+subgroup_count['Y_Level 4']
-			elif 'Y_Level 3' in subgroup_count.columns:
-				subgroup_count['Y']=subgroup_count['Y_Level 3']
+			if 'Y_Level 4' in subgroupCount.columns:
+				subgroupCount['Y']=subgroupCount['Y_Level 3']+subgroupCount['Y_Level 4']
+			elif 'Y_Level 3' in subgroupCount.columns:
+				subgroupCount['Y']=subgroupCount['Y_Level 3']
 		
 		
-		subgroup_count=subgroup_count.fillna(0)
+		subgroupCount=subgroupCount.fillna(0)
 
-		subgroup_count['Y_SUM'] = subgroup_count.filter(like='Y_').sum(1)
-		if 'Y_Chronic' in subgroup_count.columns:
-			subgroup_count['Y_Severe&Chronic']=subgroup_count['Y_Chronic']+subgroup_count['Y_Severe']
+		subgroupCount['Y_SUM'] = subgroupCount.filter(like='Y_').sum(1)
+		if 'Y_Chronic' in subgroupCount.columns:
+			subgroupCount['Y_Severe&Chronic']=subgroupCount['Y_Chronic']+subgroupCount['Y_Severe']
 			
 		
-		subgroup_count=subgroup_count.rename(columns = {'Y_Yes':'Y','Y_At/Above Benchmark':'Y', 'Y_Y':'Y','Y_Severe&Chronic':'Y'})
+		subgroupCount=subgroupCount.rename(columns = {'Y_Yes':'Y','Y_At/Above Benchmark':'Y', 'Y_Y':'Y','Y_Severe&Chronic':'Y'})
 
-		if 'Y' not in subgroup_count.columns:
-			subgroup_count['Y'] = 0
+		if 'Y' not in subgroupCount.columns:
+			subgroupCount['Y'] = 0
 		
-		idx_rename = {'All':'District'} 
-		subgroup_count = subgroup_count.rename(index=idx_rename)
+		idxRename = {'All':'District'} 
+		subgroupCount = subgroupCount.rename(index=idxRename)
 
-		subgroup_count['Y_Percent_On_Above']=((subgroup_count['Y']/subgroup_count['Y_SUM'])*100).round(1)
-		subgroup_count.loc[subgroup_count['Y_SUM'] == 0, 'Y_Percent_On_Above'] = ""
-		subgroup_count.loc[(subgroup_count['Y_SUM'] <= 10) & (subgroup_count['Y_SUM'] > 0), 'Y_Percent_On_Above'] = -1
-		idx_rename = {'All':'District'} 
-		subgroup_count = subgroup_count.rename(index=idx_rename)
+		subgroupCount['Y_Percent_On_Above']=((subgroupCount['Y']/subgroupCount['Y_SUM'])*100).round(1)
+		subgroupCount.loc[subgroupCount['Y_SUM'] == 0, 'Y_Percent_On_Above'] = ""
+		subgroupCount.loc[(subgroupCount['Y_SUM'] <= 10) & (subgroupCount['Y_SUM'] > 0), 'Y_Percent_On_Above'] = -1
+		idxRename = {'All':'District'} 
+		subgroupCount = subgroupCount.rename(index=idxRename)
 		
-		subgroup_count=subgroup_count.reset_index()
+		subgroupCount=subgroupCount.reset_index()
 		
-		subgroup_count['Y_Percent_On_Above']=subgroup_count['Y_Percent_On_Above'].astype(str)+"%"
-		subgroup_count['Y_Percent_On_Above']=subgroup_count['Y_Percent_On_Above'].replace(to_replace="-100.0%",value="*").replace(to_replace="nan%",value="").replace(to_replace="-1%", value="*").replace(to_replace="%",value="")
+		subgroupCount['Y_Percent_On_Above']=subgroupCount['Y_Percent_On_Above'].astype(str)+"%"
+		subgroupCount['Y_Percent_On_Above']=subgroupCount['Y_Percent_On_Above'].replace(to_replace="-100.0%",value="*").replace(to_replace="nan%",value="").replace(to_replace="-1%", value="*").replace(to_replace="%",value="")
 		
 		if vs_obj.assessment_type == 'ChrAbs':
-			subgroup_count=subgroup_count.rename(columns = {'Y_Percent_On_Above': vs_obj.assessment_type+" "+column.name+ "_"+vs_obj.terms[0]})
-			subgroup_count=subgroup_count[['School_Short', vs_obj.assessment_type+" "+column.name+ "_"+vs_obj.terms[0]]]
-			subgroup_count=subgroup_count.reset_index(drop=True).set_index('School_Short')
-			
-
+			subgroupCount=subgroupCount.rename(columns = {'Y_Percent_On_Above': vs_obj.assessment_type+" "+column.name+ "_"+vs_obj.terms[0]})
+			subgroupCount=subgroupCount[['School_Short', vs_obj.assessment_type+" "+column.name+ "_"+vs_obj.terms[0]]]
+			subgroupCount=subgroupCount.reset_index(drop=True).set_index('School_Short')
 		elif vs_obj.assessment_type == 'iReady':
-			#subgroup_count.loc[(subgroup_count['total'] <= 10) & (subgroup_count['total'] > 0), 'Y_Percent_On_Above'] = "*"
-			subgroup_count=subgroup_count.rename(columns = {'Y_Percent_On_Above':vs_obj.assessment_type+vs_obj.subjects[0]+vs_obj.metrics[metric_column_index]+" "+column.name+"_"+vs_obj.terms[0]})
-			
+			#subgroupCount.loc[(subgroupCount['total'] <= 10) & (subgroupCount['total'] > 0), 'Y_Percent_On_Above'] = "*"
+			subgroupCount=subgroupCount.rename(columns = {'Y_Percent_On_Above':vs_obj.assessment_type+vs_obj.subjects[0]+vs_obj.metrics[metric_column_index]+" "+column.name+"_"+vs_obj.terms[0]})	
 		else:
-			subgroup_count=subgroup_count.rename(columns = {'Y_Percent_On_Above': vs_obj.assessment_column+vs_obj.subjects[metric_column_index]+vs_obj.metrics[metric_column_index]+" "+column.name+"_"+vs_obj.terms[0]})
+			subgroupCount=subgroupCount.rename(columns = {'Y_Percent_On_Above': vs_obj.assessment_column+vs_obj.subjects[metric_column_index]+vs_obj.metrics[metric_column_index]+" "+column.name+"_"+vs_obj.terms[0]})
 
-		subgroup_count=subgroup_count.replace(to_replace="-1%",value="*").replace(to_replace="nan%",value="*")
+		subgroupCount=subgroupCount.replace(to_replace="-1%",value="*").replace(to_replace="nan%",value="*")
 
-		return(subgroup_count)
+		return(subgroupCount)
 	
 def subgroups(vs_obj, metric_column_index, finalDfs):
 	
@@ -1986,26 +1872,25 @@ def subgroups(vs_obj, metric_column_index, finalDfs):
 	for column in [vs_obj.df.Foster, vs_obj.df.SPED, vs_obj.df.FIT, vs_obj.df.EL]:
 	#for column in [vs_obj.df.SPED]:
 	
-		subgroup_count=pd.crosstab([vs_obj.df.School_Short],[column,vs_obj.df[vs_obj.columns[metric_column_index]]], 
+		subgroupCount=pd.crosstab([vs_obj.df.School_Short],[column,vs_obj.df[vs_obj.columns[metric_column_index]]], 
 							values=vs_obj.df.Student_Number, aggfunc='count',margins=True, margins_name='All')
 		
-		grd_lvl_count=pd.crosstab([vs_obj.df['Grade Level']],[column,vs_obj.df[vs_obj.columns[metric_column_index]]], 
+		grd_lvlCount=pd.crosstab([vs_obj.df['Grade Level']],[column,vs_obj.df[vs_obj.columns[metric_column_index]]], 
 							values=vs_obj.df.Student_Number, aggfunc='count',margins=True, margins_name='All')
 		
-		subgroupFinal=newSubgroups(vs_obj,0, subgroup_count, column)
+		subgroupFinal=newSubgroups(vs_obj,0, subgroupCount, column)
 		subgroupFinal = subgroupFinal.iloc[: , [0,-1]].copy()
 		subgroupFinal = subgroupFinal.T.drop_duplicates().T
 		
 		finalDfs.append(subgroupFinal)
 
 		if vs_obj.assessment_type in ('STAR', 'SEL', 'iReady', 'ESGI'):
-			SupesTabFinal=newSubgroups(vs_obj,0, grd_lvl_count, column)
+			SupesTabFinal=newSubgroups(vs_obj,0, grd_lvlCount, column)
 			SupesTabFinal = SupesTabFinal.iloc[: , [0,-1]].copy()
  		
 
 			supesGoalsTab.append(SupesTabFinal)
 		
-
 
 gradeLevelTab=[]		
 def grade_levels(vs_obj, metric_column_index, finalDfs):
@@ -2029,63 +1914,61 @@ def grade_levels(vs_obj, metric_column_index, finalDfs):
 			
 			vs_obj.df['Typical and High'] = vs_obj.df['StudentGrowthPercentileFallSpring'].apply(lambda x:'Y' if x >=35 else 'N')	
 		
-		grade_lvl=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[vs_obj.df['Typical and High']],margins=True, normalize='index').mul(100).round(1).astype(str)+"%"
-		grade_lvl_count=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[vs_obj.df['Typical and High']],margins=True)
-		grade_lvl['Y'] = np.where((grade_lvl_count['All']) <= 10,'*',grade_lvl['Y'])
+		grdLvl=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[vs_obj.df['Typical and High']],margins=True, normalize='index').mul(100).round(1).astype(str)+"%"
+		grdLvlCount=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[vs_obj.df['Typical and High']],margins=True)
+		grdLvl['Y'] = np.where((grdLvlCount['All']) <= 10,'*',grdLvl['Y'])
 		
-		grade_lvl=grade_lvl.reset_index()
-		grade_lvl=grade_lvl.pivot(index='School_Short',
+		grdLvl=grdLvl.reset_index()
+		grdLvl=grdLvl.pivot(index='School_Short',
 									columns= 'Grade Level',
 									values='Y')
 
 		
-		dist_grade_lvl_SGP=pd.crosstab([vs_obj.df['Grade Level']],[vs_obj.df['Typical and High']],margins=True, normalize='index').mul(100).round(1).astype(str)+"%"
+		dist_grdLvl_SGP=pd.crosstab([vs_obj.df['Grade Level']],[vs_obj.df['Typical and High']],margins=True, normalize='index').mul(100).round(1).astype(str)+"%"
 		rename_col={'Y':'District'}
 		rename={'Grade Level':'School_Short'}
-		dist_grade_lvl_SGP=dist_grade_lvl_SGP.rename(columns=rename_col).drop(columns='N')
-		dist_grade_lvl_SGP=dist_grade_lvl_SGP.reset_index()
-		dist_grade_lvl_SGP=dist_grade_lvl_SGP.rename(columns=rename)
+		dist_grdLvl_SGP=dist_grdLvl_SGP.rename(columns=rename_col).drop(columns='N')
+		dist_grdLvl_SGP=dist_grdLvl_SGP.reset_index()
+		dist_grdLvl_SGP=dist_grdLvl_SGP.rename(columns=rename)
 		
-		dist_grade_lvl_SGP=dist_grade_lvl_SGP.reset_index(drop=True).set_index(['School_Short'])
-		dist_grade_lvl_SGP=dist_grade_lvl_SGP.T
-		grade_lvl=grade_lvl.drop(index='All')
+		dist_grdLvl_SGP=dist_grdLvl_SGP.reset_index(drop=True).set_index(['School_Short'])
+		dist_grdLvl_SGP=dist_grdLvl_SGP.T
+		grdLvl=grdLvl.drop(index='All')
 		
+		grdLvl = pd.concat([grdLvl, dist_grdLvl_SGP])
+		grdLvl.index.name='School_Short'
 
-		grade_lvl = pd.concat([grade_lvl, dist_grade_lvl_SGP])
-		grade_lvl.index.name='School_Short'
-
-		
 		
 	if vs_obj.assessment_type == 'STAR' and vs_obj.metrics[metric_column_index] == 'SB':
-		grade_lvl=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[vs_obj.df[vs_obj.columns[metric_column_index]]],margins=True)
+		grdLvl=pd.crosstab([vs_obj.df.School_Short, vs_obj.df['Grade Level']],[vs_obj.df[vs_obj.columns[metric_column_index]]],margins=True)
 
-		grade_lvl['Percentage Proficient']=(grade_lvl['Yes']/grade_lvl['All']).mul(100).round(1).astype(str) + '%'
-		grade_lvl['Percentage Proficient'] = np.where((grade_lvl['All']) <= 10,'*',grade_lvl['Percentage Proficient'])
-		grade_lvl=grade_lvl.reset_index()
-		grade_lvl=grade_lvl.pivot(index='School_Short',
+		grdLvl['Percentage Proficient']=(grdLvl['Yes']/grdLvl['All']).mul(100).round(1).astype(str) + '%'
+		grdLvl['Percentage Proficient'] = np.where((grdLvl['All']) <= 10,'*',grdLvl['Percentage Proficient'])
+		grdLvl=grdLvl.reset_index()
+		grdLvl=grdLvl.pivot(index='School_Short',
 									columns= 'Grade Level',
 									values='Percentage Proficient')
 
-		dist_grade_lvl_SB=pd.crosstab([vs_obj.df['Grade Level']],[vs_obj.df[vs_obj.columns[metric_column_index]]],margins=True, normalize='index').mul(100).round(1).astype(str)+"%"
+		distGrdLvlSB=pd.crosstab([vs_obj.df['Grade Level']],[vs_obj.df[vs_obj.columns[metric_column_index]]],margins=True, normalize='index').mul(100).round(1).astype(str)+"%"
 		cols={'Yes':'District'}
 		_rename={'Grade Level':'School_Short'}
-		dist_grade_lvl_SB=dist_grade_lvl_SB.rename(columns=cols).drop(columns='No')
+		distGrdLvlSB=distGrdLvlSB.rename(columns=cols).drop(columns='No')
 		
-		dist_grade_lvl_SB=dist_grade_lvl_SB.reset_index()
-		dist_grade_lvl_SB=dist_grade_lvl_SB.rename(columns=_rename)
+		distGrdLvlSB=distGrdLvlSB.reset_index()
+		distGrdLvlSB=distGrdLvlSB.rename(columns=_rename)
 		
-		dist_grade_lvl_SB=dist_grade_lvl_SB.reset_index(drop=True).set_index(['School_Short'])
-		dist_grade_lvl_SB=dist_grade_lvl_SB.T
+		distGrdLvlSB=distGrdLvlSB.reset_index(drop=True).set_index(['School_Short'])
+		distGrdLvlSB=distGrdLvlSB.T
 
-		grade_lvl = pd.concat([grade_lvl, dist_grade_lvl_SB])
-		grade_lvl.index.name='School_Short'
+		grdLvl = pd.concat([grdLvl, distGrdLvlSB])
+		grdLvl.index.name='School_Short'
 		
 
-	grade_lvl=gradeLevelAddColumns(vs_obj, grade_lvl)
-	grade_lvl=grade_lvl.drop(columns='')
-	gradeLevelTab.append(grade_lvl)
+	grdLvl=gradeLevelAddColumns(vs_obj, grdLvl)
+	grdLvl=grdLvl.drop(columns='')
+	gradeLevelTab.append(grdLvl)
 	
-	#finalDfs.append(grade_lvl)
+	#finalDfs.append(grdLvl)
 	
 def disIndx(vs_obj,finalDfs):
 	vs_obj.df=vs_obj.df[vs_obj.columns]
@@ -2103,7 +1986,6 @@ def disIndx(vs_obj,finalDfs):
 		vs_obj.df.rename(columns=DIC3_rename_col, inplace=True)
 	
 	vs_obj.df.reset_index()
-	
 	finalDfs.append(vs_obj.df)
 
 
@@ -2147,10 +2029,8 @@ def saebrsScreener(vs_obj,finalDfs):
 	finalDfs.append(vs_obj.df)
 	
 
-
-
 def supesGoals(vs_obj):
-	idx_rename = {'All':'District'} 
+	idxRename = {'All':'District'} 
 	
 	#STAR SB calculations - Did Literacy for Supes Goals, then added Math for Assessment Summaries.
 	#if (vs_obj.assessment_type == 'STAR') and (vs_obj.metrics[0] == 'SB') and ('math' in vs_obj.subjects):
@@ -2161,47 +2041,47 @@ def supesGoals(vs_obj):
 
 		
 		supes=pd.crosstab([vs_obj.df['Grade Level']],[vs_obj.df['StateBenchmarkProficient']],margins=True)
-		supes = supes.rename(index=idx_rename)
+		supes = supes.rename(index=idxRename)
 		supes['Percentage Proficient']=(supes['Yes']/supes['All']).mul(100).round(1).astype(str) + '%'
 		supes['Percentage Proficient'] = np.where((supes['All']) <= 10,'*',supes['Percentage Proficient'])
 		
-		#supes_race = supes_race.rename(index=idx_rename)
-		supes_race=pd.crosstab([vs_obj.df['Grade Level'],vs_obj.df['Race_Ethn']],[vs_obj.df['StateBenchmarkProficient']],margins=True)
-		supes_race['Percentage Proficient']=(supes_race['Yes']/supes_race['All']).mul(100).round(1).astype(str) + '%'
-		supes_race['Percentage Proficient'] = np.where((supes_race['All']) <= 10,'*',supes_race['Percentage Proficient'])
-		supes_race=supes_race.reset_index()
+		#supesRace = supesRace.rename(index=idxRename)
+		supesRace=pd.crosstab([vs_obj.df['Grade Level'],vs_obj.df['Race_Ethn']],[vs_obj.df['StateBenchmarkProficient']],margins=True)
+		supesRace['Percentage Proficient']=(supesRace['Yes']/supesRace['All']).mul(100).round(1).astype(str) + '%'
+		supesRace['Percentage Proficient'] = np.where((supesRace['All']) <= 10,'*',supesRace['Percentage Proficient'])
+		supesRace=supesRace.reset_index()
 
-		supes_race_total=pd.crosstab([vs_obj.df['Race_Ethn']],[vs_obj.df['StateBenchmarkProficient']],margins=True)
-		supes_race_total = supes_race_total.drop(index=['All'])
-		supes_race_total['District']=(supes_race_total['Yes']/supes_race_total['All']).mul(100).round(1).astype(str) + '%'
-		supes_race_total['District'] = np.where((supes_race_total['All']) <= 10,'*',supes_race_total['District'])
+		supesRace_total=pd.crosstab([vs_obj.df['Race_Ethn']],[vs_obj.df['StateBenchmarkProficient']],margins=True)
+		supesRace_total = supesRace_total.drop(index=['All'])
+		supesRace_total['District']=(supesRace_total['Yes']/supesRace_total['All']).mul(100).round(1).astype(str) + '%'
+		supesRace_total['District'] = np.where((supesRace_total['All']) <= 10,'*',supesRace_total['District'])
 		
 		supes=supes.reset_index().set_index("Grade Level")
-		race_dfs=[supes_race, supes,  supes_race_total]
+		race_dfs=[supesRace, supes,  supesRace_total]
 		drop_cols=['No','Yes','All','']
 		
 		
-		for col in supes_race.columns:
+		for col in supesRace.columns:
 			if col in drop_cols:
-				supes_race=supes_race.drop(columns=col)
+				supesRace=supesRace.drop(columns=col)
 		for col in supes.columns:
 			if col in drop_cols:
 				supes=supes.drop(columns=col)
-		for col in supes_race_total.columns:
+		for col in supesRace_total.columns:
 			if col in drop_cols:
-				supes_race_total=supes_race_total.drop(columns=col)
+				supesRace_total=supesRace_total.drop(columns=col)
 		
-		supes_race_total=supes_race_total.T
-		#supes_race_total=supes_race_total.index.rename('Grade Level')
+		supesRace_total=supesRace_total.T
+		#supesRace_total=supesRace_total.index.rename('Grade Level')
 		
 		supes=supes.rename(columns={'Percentage Proficient': "STAR_SG"+vs_obj.subjects[0]+vs_obj.metrics[0]+" ALL_"+vs_obj.terms[0]})
 		
-		supes_race=supes_race.pivot(index="Grade Level",
+		supesRace=supesRace.pivot(index="Grade Level",
 									columns="Race_Ethn",
 									values='Percentage Proficient')
 
 		
-		supes_race=supes_race.reset_index().set_index("Grade Level")
+		supesRace=supesRace.reset_index().set_index("Grade Level")
 		
 		rename={}
 		races={'African_American':'AA', 'American_Indian':'AI','American Indian':'AI','Asian':'A', 'Filipino':'F', 'Hispanic':'HL', 'Mult':'Mult',
@@ -2212,23 +2092,21 @@ def supesGoals(vs_obj):
 			rename[col]="STAR_SG"+vs_obj.subjects[0]+vs_obj.metrics[0]+" "+races[col]+""+vs_obj.terms[0]
 		
 
-
 		supes=supes.rename(columns=rename)
-		supes_race=supes_race.rename(columns=rename)
-		supes_race_total=supes_race_total.rename(columns=rename)
+		supesRace=supesRace.rename(columns=rename)
+		supesRace_total=supesRace_total.rename(columns=rename)
 		
-		supes_race=pd.concat([supes_race,supes_race_total])
-		supes_race.index.rename('Grade Level', inplace=True)
-		supes_race=supes_race.drop(index='All')
-		supes_race=pd.concat([supes_race, supes], axis=1)
-		supes_race=supes_race.drop(columns=[''])
-		#supes_race=supes_race.index.rename("Grade Level")
-		supesGoalsTab.append(supes_race)
+		supesRace=pd.concat([supesRace,supesRace_total])
+		supesRace.index.rename('Grade Level', inplace=True)
+		supesRace=supesRace.drop(index='All')
+		supesRace=pd.concat([supesRace, supes], axis=1)
+		supesRace=supesRace.drop(columns=[''])
+		#supesRace=supesRace.index.rename("Grade Level")
+		supesGoalsTab.append(supesRace)
 		
 	
 		supeGoalsGrdLvlSubgrps(vs_obj, 0)
 		
-	
 
 	#iReady GL calculations - Did Literacy for Supes Goals, then added Math for Assessment Summaries
 	#if (vs_obj.assessment_type == 'iReady') and (vs_obj.metrics[0] == 'GradeLevel') and ('Math'in vs_obj.subjects):
@@ -2243,32 +2121,32 @@ def supesGoals(vs_obj):
 			springWindowFilter(vs_obj)
 
 		vs_obj.df = vs_obj.df.replace(r'^\s*$', np.nan, regex=True)
-		supesiReadyGL_count=pd.crosstab([vs_obj.df['Grade Level']],[vs_obj.df['Overall Relative Placement']], values=vs_obj.df.Student_Number, aggfunc='count',margins=True)
+		supesiReadyGLCount=pd.crosstab([vs_obj.df['Grade Level']],[vs_obj.df['Overall Relative Placement']], values=vs_obj.df.Student_Number, aggfunc='count',margins=True)
 		supesiReadyGL=pd.crosstab([vs_obj.df['Grade Level']],[vs_obj.df['Overall Relative Placement']], values=vs_obj.df.Student_Number, aggfunc='count',margins=True, normalize='index')
 		supesiReadyGL=supesiReadyGL.fillna(0)
 		supesiReadyGL['On or Above']=supesiReadyGL['Early On Grade Level']+supesiReadyGL['Mid or Above Grade Level']
 		supesiReadyGL=supesiReadyGL.fillna(0)
 		supesiReadyGL['On or Above']=supesiReadyGL['On or Above'].mul(100).round(1).astype(str)+"%"
-		supesiReadyGL['On or Above'] = np.where((supesiReadyGL_count['All'] <= 10) & (supesiReadyGL_count['All'] > 0),'*',supesiReadyGL['On or Above'])
+		supesiReadyGL['On or Above'] = np.where((supesiReadyGLCount['All'] <= 10) & (supesiReadyGLCount['All'] > 0),'*',supesiReadyGL['On or Above'])
 		
-		supesiReadyGL_count = supesiReadyGL_count.rename(index=idx_rename)
+		supesiReadyGLCount = supesiReadyGLCount.rename(index=idxRename)
 		drop_cols=['1 Grade Level Below',	'2 Grade Levels Below',	'3 or More Grade Levels Below',	'Early On Grade Level',	'Mid or Above Grade Level']
 		
 		for col in drop_cols:
 			if col in supesiReadyGL.columns:
 				supesiReadyGL=supesiReadyGL.drop(columns=col)
 		
-		supesiReadyGL = supesiReadyGL.rename(index=idx_rename).rename(columns={'On or Above':"iReady_SG"+vs_obj.subjects[0]+vs_obj.metrics[0]+" ALL_"+vs_obj.terms[0]})
+		supesiReadyGL = supesiReadyGL.rename(index=idxRename).rename(columns={'On or Above':"iReady_SG"+vs_obj.subjects[0]+vs_obj.metrics[0]+" ALL_"+vs_obj.terms[0]})
 		
 		#race
-		supesiReadyGL_race=pd.crosstab([vs_obj.df['Grade Level'],vs_obj.df['Race_Ethn']],[vs_obj.df['Overall Relative Placement']], values=vs_obj.df.Student_Number, aggfunc='count',margins=True)
-		supesiReadyGL_race=supesiReadyGL_race.fillna(0)
-		supesiReadyGL_race['On or Above']=supesiReadyGL_race['Early On Grade Level']+supesiReadyGL_race['Mid or Above Grade Level']
-		supesiReadyGL_race['On or Above %']=(supesiReadyGL_race['On or Above']/supesiReadyGL_race['All']).mul(100).round(1).astype(str)+"%"
-		supesiReadyGL_race['On or Above %'] = np.where((supesiReadyGL_race['All']) <= 10,'*',supesiReadyGL_race['On or Above %'])
-		supesiReadyGL_race = supesiReadyGL_race.rename(index=idx_rename).reset_index()
+		supesiReadyGLRace=pd.crosstab([vs_obj.df['Grade Level'],vs_obj.df['Race_Ethn']],[vs_obj.df['Overall Relative Placement']], values=vs_obj.df.Student_Number, aggfunc='count',margins=True)
+		supesiReadyGLRace=supesiReadyGLRace.fillna(0)
+		supesiReadyGLRace['On or Above']=supesiReadyGLRace['Early On Grade Level']+supesiReadyGLRace['Mid or Above Grade Level']
+		supesiReadyGLRace['On or Above %']=(supesiReadyGLRace['On or Above']/supesiReadyGLRace['All']).mul(100).round(1).astype(str)+"%"
+		supesiReadyGLRace['On or Above %'] = np.where((supesiReadyGLRace['All']) <= 10,'*',supesiReadyGLRace['On or Above %'])
+		supesiReadyGLRace = supesiReadyGLRace.rename(index=idxRename).reset_index()
 		
-		supesiReadyGL_race=supesiReadyGL_race.pivot(index='Grade Level',
+		supesiReadyGLRace=supesiReadyGLRace.pivot(index='Grade Level',
 										columns='Race_Ethn',
 										values='On or Above %')
 
@@ -2279,9 +2157,9 @@ def supesGoals(vs_obj):
 		for col in races.keys():
 			rename[col]="iReady_SG"+vs_obj.subjects[0]+vs_obj.metrics[0]+" "+races[col]+""+vs_obj.terms[0]
 		
-		supesiReadyGL_race=supesiReadyGL_race.rename(columns=rename)
+		supesiReadyGLRace=supesiReadyGLRace.rename(columns=rename)
 
-		supesiReadyGL=pd.concat([supesiReadyGL_race, supesiReadyGL], axis=1)
+		supesiReadyGL=pd.concat([supesiReadyGLRace, supesiReadyGL], axis=1)
 		supesiReadyGL=supesiReadyGL.drop(columns=[''])
 
 		
@@ -2296,14 +2174,14 @@ def supesGoals(vs_obj):
 			
 			MetEOYBenchmark=pd.crosstab([new['Test Name'],new['Grade Level_y']],[new['Met EOY Benchmark']],values=vs_obj.df.Student_Number, 
 							margins=True, aggfunc='count')
-			ESGI_race=pd.crosstab([new['Test Name'],new['Grade Level_y'],new['Race_Ethn']],[new['Met EOY Benchmark']],values=vs_obj.df.Student_Number, 
+			esgiRace=pd.crosstab([new['Test Name'],new['Grade Level_y'],new['Race_Ethn']],[new['Met EOY Benchmark']],values=vs_obj.df.Student_Number, 
 							margins=True, aggfunc='count')
 		
-			idx_rename = {'All':'District'} 
-			MetEOYBenchmark = MetEOYBenchmark.rename(index=idx_rename)
-			ESGI_race=ESGI_race.rename(index=idx_rename)
+			idxRename = {'All':'District'} 
+			MetEOYBenchmark = MetEOYBenchmark.rename(index=idxRename)
+			esgiRace=esgiRace.rename(index=idxRename)
 			MetEOYBenchmark=MetEOYBenchmark.fillna(0)
-			ESGI_race=ESGI_race.fillna(0)
+			esgiRace=esgiRace.fillna(0)
 
 			MetEOYBenchmark['PercentageMetEOYBenchmark']=(MetEOYBenchmark['Y']/MetEOYBenchmark['All']).mul(100).round(1)
 			MetEOYBenchmark['PercentageMetEOYBenchmark'] = np.where((MetEOYBenchmark['All']) <= 10,'*',MetEOYBenchmark['PercentageMetEOYBenchmark'])
@@ -2314,21 +2192,16 @@ def supesGoals(vs_obj):
 			MetEOYBenchmark=MetEOYBenchmark.rename(columns={'PercentageMetEOYBenchmark':metric+" ALL "+vs_obj.terms[0],'Grade Level_y':'Grade Level'})
 			MetEOYBenchmark.loc[MetEOYBenchmark.index[-1], 'Grade Level']='District'
 			MetEOYBenchmark=MetEOYBenchmark.drop(columns=['Test Name','FALSE','Y','All'])
-			ESGI_race['PercentageMetEOYBenchmark']=(ESGI_race['Y']/ESGI_race['All']).mul(100).round(1)
-			ESGI_race['PercentageMetEOYBenchmark'] = np.where((ESGI_race['All']) <= 10,'*',ESGI_race['PercentageMetEOYBenchmark'])
-			ESGI_race['PercentageMetEOYBenchmark'] = ESGI_race['PercentageMetEOYBenchmark'].astype(str)+"%"
-			ESGI_race=ESGI_race.replace(to_replace="*%", value="*")
-			
-			ESGI_race=ESGI_race.reset_index()
-			
-			ESGI_race=ESGI_race.pivot(index='Grade Level_y'
+			esgiRace['PercentageMetEOYBenchmark']=(esgiRace['Y']/esgiRace['All']).mul(100).round(1)
+			esgiRace['PercentageMetEOYBenchmark'] = np.where((esgiRace['All']) <= 10,'*',esgiRace['PercentageMetEOYBenchmark'])
+			esgiRace['PercentageMetEOYBenchmark'] = esgiRace['PercentageMetEOYBenchmark'].astype(str)+"%"
+			esgiRace=esgiRace.replace(to_replace="*%", value="*")
+			esgiRace=esgiRace.reset_index()
+			esgiRace=esgiRace.pivot(index='Grade Level_y'
 									, columns='Race_Ethn'
 									, values='PercentageMetEOYBenchmark')
-
-			
-			ESGI_race=ESGI_race.reset_index().rename(columns={'Grade Level_y':'Grade Level'})
-			
-			ESGI_race=ESGI_race.set_index('Grade Level').drop(index=[''])
+			esgiRace=esgiRace.reset_index().rename(columns={'Grade Level_y':'Grade Level'})	
+			esgiRace=esgiRace.set_index('Grade Level').drop(index=[''])
 			
 			rename={}
 			races={'African_American':'AA', 'American_Indian':'AI','American Indian':'AI','Asian':'A', 'Filipino':'F', 'Hispanic':'HL', 'Mult':'Mult',
@@ -2338,15 +2211,11 @@ def supesGoals(vs_obj):
 			for col in races.keys():
 				rename[col]=metric+" "+races[col]+" "+vs_obj.terms[0]
 		
-
-
-			ESGI_race=ESGI_race.rename(columns=rename)
-			
-			ESGI_race=ESGI_race.reset_index()
-			
+			esgiRace=esgiRace.rename(columns=rename)	
+			esgiRace=esgiRace.reset_index()
 			
 			supesGoalsTab.append(MetEOYBenchmark)
-			supesGoalsTab.append(ESGI_race)
+			supesGoalsTab.append(esgiRace)
 			
 		supeGoalsGrdLvlSubgrps(vs_obj, 0)
 			
@@ -2356,16 +2225,16 @@ def supesGoals(vs_obj):
 		vs_obj.df=vs_obj.df.sort_values('CompletedDate').groupby('Student_Number').tail(1)
 		vs_obj.df=vs_obj.df[vs_obj.df.AssessmentStatus =='Active']
 
-		SELDB_race=pd.crosstab([vs_obj.df['Grade Level'], vs_obj.df.Race_Ethn],[vs_obj.df.DistrictBenchmarkCategoryName], values=vs_obj.df.Student_Number, aggfunc='count',margins=True)
+		selDBRace=pd.crosstab([vs_obj.df['Grade Level'], vs_obj.df.Race_Ethn],[vs_obj.df.DistrictBenchmarkCategoryName], values=vs_obj.df.Student_Number, aggfunc='count',margins=True)
 
-		SELDB_race['Percent_On_Above']=(SELDB_race['At/Above Benchmark']/SELDB_race['All']).mul(100).round(1)
-		SELDB_race['Percent_On_Above'] = np.where((((SELDB_race['All']) <= 10) & ((SELDB_race['All']) > 0)),'*',SELDB_race['Percent_On_Above'])
-		SELDB_race['Percent_On_Above'] = SELDB_race['Percent_On_Above'].astype(str)+"%"
-		SELDB_race=SELDB_race.replace(to_replace="*%", value="*")
-		SELDB_race=SELDB_race.drop(index='All')
+		selDBRace['Percent_On_Above']=(selDBRace['At/Above Benchmark']/selDBRace['All']).mul(100).round(1)
+		selDBRace['Percent_On_Above'] = np.where((((selDBRace['All']) <= 10) & ((selDBRace['All']) > 0)),'*',selDBRace['Percent_On_Above'])
+		selDBRace['Percent_On_Above'] = selDBRace['Percent_On_Above'].astype(str)+"%"
+		selDBRace=selDBRace.replace(to_replace="*%", value="*")
+		selDBRace=selDBRace.drop(index='All')
 	
-		SELDB_race=SELDB_race.reset_index()
-		SELDB_race=SELDB_race.pivot(index='Grade Level'
+		selDBRace=selDBRace.reset_index()
+		selDBRace=selDBRace.pivot(index='Grade Level'
 									, columns='Race_Ethn'
 									, values='Percent_On_Above')
 
@@ -2379,18 +2248,18 @@ def supesGoals(vs_obj):
 			rename[col]="SEL_DB "+races[col]+" "+vs_obj.terms[0]
 		
 
-		SELDB_race=SELDB_race.rename(columns=rename)
-		dist_grade_lvl_DB=pd.crosstab([vs_obj.df['Grade Level']],[vs_obj.df['DistrictBenchmarkCategoryName']],margins=True, normalize='index').mul(100).round(1).astype(str)+"%"
+		selDBRace=selDBRace.rename(columns=rename)
+		distGrdLvlDB=pd.crosstab([vs_obj.df['Grade Level']],[vs_obj.df['DistrictBenchmarkCategoryName']],margins=True, normalize='index').mul(100).round(1).astype(str)+"%"
 		rename_col={'At/Above Benchmark':'District'}
 		rename={'Grade Level':'School_Short'}
-		dist_grade_lvl_DB=dist_grade_lvl_DB.rename(columns=rename_col).drop(columns=['Intervention','On Watch','Urgent Intervention'])
-		dist_grade_lvl_DB=dist_grade_lvl_DB.rename(index={'All':"District"})
+		
+		distGrdLvlDB=distGrdLvlDB.rename(columns=rename_col).drop(columns=['Intervention','On Watch','Urgent Intervention'])
+		distGrdLvlDB=distGrdLvlDB.rename(index={'All':"District"})
 			
+		selDBRace=pd.concat([selDBRace, distGrdLvlDB],axis=1)
+		selDBRace=selDBRace.rename(columns={'District':"SEL_DB ALL "+vs_obj.terms[0]})
 		
-		SELDB_race=pd.concat([SELDB_race, dist_grade_lvl_DB],axis=1)
-		SELDB_race=SELDB_race.rename(columns={'District':"SEL_DB ALL "+vs_obj.terms[0]})
-		
-		supesGoalsTab.append(SELDB_race)
+		supesGoalsTab.append(selDBRace)
 		supeGoalsGrdLvlSubgrps(vs_obj, 0)
 
 
@@ -2452,10 +2321,8 @@ def supeGoalsGrdLvlSubgrps(vs_obj, metric_column_index):
 				GrdLvlSubgps=GrdLvlSubgps[['Grade Level_y', column.name, 'Y %']]
 				GrdLvlSubgps=GrdLvlSubgps.rename(columns={'Y %': metric+" "+column.name+" "+vs_obj.terms[0],'Grade Level_y':'Grade Level'})
 				
-				
 				supesGoalsTab.append(GrdLvlSubgps)
 
-	
 	if ('read' in vs_obj.subjects)  or ('EarlyLit' in vs_obj.subjects) or ('SpEarlyLit' in vs_obj.subjects):
 		
 		vs_obj.df.loc[vs_obj.df['SPED'] =='ESN', 'SPED'] = 'Y'
@@ -2475,7 +2342,6 @@ def supeGoalsGrdLvlSubgrps(vs_obj, metric_column_index):
 			if (vs_obj.assessment_type == 'STAR') or (vs_obj.assessment_type == 'SEL'):
 				starFilters(vs_obj)
 			
-			
 			GrdLvlSubgps=GrdLvlSubgps.rename(columns = {'Yes':'Y','At/Above Benchmark':'Y', 'Y':'Y','Severe&Chronic':'Y'})
 			
 			if 'Y' not in GrdLvlSubgps.columns:
@@ -2485,8 +2351,8 @@ def supeGoalsGrdLvlSubgrps(vs_obj, metric_column_index):
 			GrdLvlSubgps.loc[GrdLvlSubgps['All'] == 0, 'Y %'] = ""
 			GrdLvlSubgps.loc[(GrdLvlSubgps['All'] <= 10) & (GrdLvlSubgps['All'] > 0), 'Y %'] = -1
 			
-			idx_rename = {'All':'District'} 
-			GrdLvlSubgps = GrdLvlSubgps.rename(index=idx_rename)
+			idxRename = {'All':'District'} 
+			GrdLvlSubgps = GrdLvlSubgps.rename(index=idxRename)
 			
 			GrdLvlSubgps['Y %']=GrdLvlSubgps['Y %'].astype(str)+"%"
 			GrdLvlSubgps['Y %']=GrdLvlSubgps['Y %'].replace(to_replace="-100.0%",value="*").replace(to_replace="nan%",value="").replace(to_replace="-1%", value="*").replace(to_replace="%",value="")
@@ -2499,11 +2365,8 @@ def supeGoalsGrdLvlSubgrps(vs_obj, metric_column_index):
 			supesGoalsTab.append(GrdLvlSubgps)
 
 
-
 def createGradeLevelTab(gradeLevelTab):
-
 	GL_dfs = [df.replace(to_replace="*%",value="*").replace(to_replace=-1,value="*") for df in GradeLevelTab]
-	
 	GLs_concatenated=pd.concat(GL_dfs, axis=0)
 
 	drop=['All','Total','',-1,-2]
@@ -2516,7 +2379,6 @@ def createGradeLevelTab(gradeLevelTab):
 	set_with_dataframe(worksheet,GLs_concatenated,1,1,include_index=True)
 
 def createSupesGoalsTab(supesGoalsTab):
-	
 	SupesGoals_dfs=[df.reset_index().set_index('Grade Level').replace(to_replace="*%",value="*").replace(to_replace=-1,value="*") for df in SupesGoalsTab]
 	SupesGoals_concatenated=pd.concat(SupesGoals_dfs, axis=1)
 	drop=['index','EL','SPED','']
@@ -2529,9 +2391,7 @@ def createSupesGoalsTab(supesGoalsTab):
 	set_with_dataframe(worksheet,SupesGoals_concatenated,1,1,include_index=True)
 
 def createVitalSignsTab(finalDfs):
-	
 	dfs = [df.reset_index().set_index('School_Short').replace(to_replace="*%",value="*").replace(to_replace=-1,value="*") for df in finalDfs]
-
 	concatenated=pd.concat(dfs, axis=1)
 
 	cycle3=concatenated[[c for c in concatenated.columns if c in cylce3_ExpectedColumns]]
