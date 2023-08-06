@@ -1,4 +1,10 @@
 
+""" These functions output the data needed specifically for the VitalSigns Scorecards. Each school receives an individual
+scorecard. The Vital Signs Scoredcareds contain two tabs:
+A whole school tab and a Grade Level tab. Data is reported by School and disaggregated into Student Subgroups including Race/Ethniciy, Foster, EL, Families in Transition (FIT) and SPED
+on the first tab and is disaggregated by Grade Level on the seond tab.  """
+
+
 from datetime import date
 import pandas as pd
 import numpy as np
@@ -14,6 +20,7 @@ from gspread_pandas import Spread, Client
 from Short_Feeder_Dicts import *
 gc = gspread.service_account(filename='google_secret.json')
 
+cachedAssessmentDFs={}
 
 # datetime object containing current date and time
 now = datetime.now()
@@ -36,19 +43,16 @@ class VitalSignsDataframe(object):
 			self.assessment_column = assessment_type
 				
 
-assessmentsDFs={}
-supesGoalsTab=[]
-
 def magicDF(assessment_type):
-	if assessment_type in assessmentsDFs:
-		return(assessmentsDFs[assessment_type])
+	if assessment_type in cachedAssessmentDFs:
+		return(cachedAssessmentDFs[assessment_type])
 	
 	(sheet_id, tab_name) = googleSheets[assessment_type]
 	google_sheet = gc.open_by_url("https://docs.google.com/spreadsheets/d/"+sheet_id+"/edit?usp=sharing")
 	worksheet=google_sheet.worksheet(tab_name) 
 	df=pd.DataFrame(worksheet.get_all_records())
 
-	assessmentsDFs[assessment_type]=df
+	cachedAssessmentDFs[assessment_type]=df
 	return(df)
 	
 def createAssessments(gc):
@@ -225,7 +229,7 @@ def createAssessments(gc):
 						]
 			
 	return(assessments)						
-
+#filters for iReady assesment files for Cycle 2 - Winter 
 def winterWindowFilter(vs_obj):
 	if 'ScreeningPeriodWindowName' in vs_obj.df.columns:
 		vs_obj.df=vs_obj.df.loc[(vs_obj.df['ScreeningPeriodWindowName'] == 'Winter')] 
@@ -234,6 +238,7 @@ def winterWindowFilter(vs_obj):
 		mask = (vs_obj.df['Completion Date'] >= '2023-01-18') & (vs_obj.df['Completion Date'] <= '2023-02-17')
 		vs_obj.df=vs_obj.df.loc[mask]
 
+#filters for iReady assessment files for Cycle 3 - Spring
 def springWindowFilter(vs_obj):
 	if 'ScreeningPeriodWindowName' in vs_obj.df.columns:
 		vs_obj.df=vs_obj.df.loc[(vs_obj.df['ScreeningPeriodWindowName'] == 'Spring')]
@@ -242,6 +247,7 @@ def springWindowFilter(vs_obj):
 		mask = (vs_obj.df['Completion Date'] >= '2023-05-01') & (vs_obj.df['Completion Date'] <= '2023-06-01')
 		vs_obj.df=vs_obj.df.loc[mask]
 
+#iReady filters for all windows to capture correct grade levels, enrolled students and most recent assessment
 def iReadyFilter(vs_obj):
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 	vs_obj.df=vs_obj.df.reset_index()	
@@ -253,9 +259,10 @@ def iReadyFilter(vs_obj):
 	if vs_obj.subjects[0] == 'read':
 		vs_obj.df=vs_obj.df[vs_obj.df['Grade Level'].isin(['0.0','0.1','2.0','3.0','4.0','5.0','6.0','7.0','8.0'])]
 
+#adds name, grade level, metric, and cycle columns to Grade Level Tab needed for final reporting. 
 def gradeLevelAddColumns(vs_obj, grdLvl_df):
 	idxRename = {'All':'District'} 
-	grdLvl_df = grdLvl_df.rename(index=idxRename)
+	grdLvlDF = grdLvlDF.rename(index=idxRename)
 	assessment_name=vs_obj.assessment_type+" "+vs_obj.subjects[0].title()
 	measure=vs_obj.metrics[0]
 	cycle=vs_obj.terms[0]
@@ -286,11 +293,12 @@ def gradeLevelAddColumns(vs_obj, grdLvl_df):
 		measure = 'Overall Spanish Placement'
 
 	
-	grdLvl_df.insert(0,"Cycle",[cycle]*len(grdLvl_df))
-	grdLvl_df.insert(0,"Measure",[measure]*len(grdLvl_df))
-	grdLvl_df.insert(0,"Assessment",[assessment_name]*len(grdLvl_df))
-	return(grdLvl_df)
+	grdLvlDF.insert(0,"Cycle",[cycle]*len(grdLvlDF))
+	grdLvlDF.insert(0,"Measure",[measure]*len(grdLvlDF))
+	grdLvlDF.insert(0,"Assessment",[assessment_name]*len(grdLvlDF))
+	return(grdLvlDF)
 
+#merges demographics with assesssment data on the district ID (student_number) to ensure standard demographcis across all dfs.
 def mergeDemos(df_assessment, dfDemos):
 	return(pd.merge(df_assessment, dfDemos, how="left", on='Student_Number'))
 	
@@ -301,15 +309,15 @@ def codifySchoolnames(df_assessment):
 	else:
 		df_assessment['School_Short']=df_assessment['School'].map(Short_names)
 
-
+#filters for STAR assessments - use for 2022-23 cycles
 def starFilters(vs_obj):
 		if vs_obj.terms[0] == 'FA2022':
 			vs_obj.df=vs_obj.df.loc[(vs_obj.df['ScreeningPeriodWindowName'] == 'Fall') | (vs_obj.df['ScreeningPeriodWindowName'] == 'Round 1')]
-		if vs_obj.terms[0] == 'W2022':
+		elif vs_obj.terms[0] == 'W2022':
 			vs_obj.df=vs_obj.df.loc[vs_obj.df['ScreeningPeriodWindowName'] == 'Winter']
-		if vs_obj.terms[0] == 'SP2023' and vs_obj.metrics[0]=='SB':
+		elif vs_obj.terms[0] == 'SP2023' and vs_obj.metrics[0]=='SB':
 			vs_obj.df=vs_obj.df.loc[vs_obj.df['ScreeningPeriodWindowName'] == 'Spring']
-		if vs_obj.terms[0] == 'SP2023' and vs_obj.metrics[0]=='DB':
+		elif vs_obj.terms[0] == 'SP2023' and vs_obj.metrics[0]=='DB':
 			vs_obj.df=vs_obj.df.loc[vs_obj.df['ScreeningPeriodWindowName'] == 'Spring']
 
 		vs_obj.df=vs_obj.df[vs_obj.df.EnrollmentStatus == 'Enrolled']
@@ -317,26 +325,27 @@ def starFilters(vs_obj):
 		if vs_obj.subjects[0] == 'math':
 			vs_obj.df=vs_obj.df[vs_obj.df['CurrentGrade'].isin([1,2,3,4,5,6,7,8,9,10,11])]
 		
-		if vs_obj.subjects[0] == 'read' or vs_obj.subjects[0] == 'SP_read':
+		elif vs_obj.subjects[0] == 'read' or vs_obj.subjects[0] == 'SP_read':
 			vs_obj.df=vs_obj.df[vs_obj.df['CurrentGrade'].isin([2,3,4,5,6,7,8,9,10,11])]
 
-		if vs_obj.subjects[0] == 'EarlyLit' or vs_obj.subjects[0] == 'SpEarlyLit':
+		elif vs_obj.subjects[0] == 'EarlyLit' or vs_obj.subjects[0] == 'SpEarlyLit':
 			vs_obj.df=vs_obj.df[vs_obj.df['Grade Level'].isin([0,1])]
-
-def newSTARFilter(vs_obj):
+#New STAR filter needed because reporting definitions changes - only captures grades 9-11
+def new23_24STARFilter(vs_obj):
 		if vs_obj.terms[0] == 'FA2022':
 			vs_obj.df=vs_obj.df.loc[(vs_obj.df['ScreeningPeriodWindowName'] == 'Fall') | (vs_obj.df['ScreeningPeriodWindowName'] == 'Round 1')]
-		if vs_obj.terms[0] == 'W2022':
+		elif vs_obj.terms[0] == 'W2022':
 			vs_obj.df=vs_obj.df.loc[vs_obj.df['ScreeningPeriodWindowName'] == 'Winter']
 		if vs_obj.terms[0] == 'SP2023' and vs_obj.metrics[0]=='SB':
 			vs_obj.df=vs_obj.df.loc[vs_obj.df['ScreeningPeriodWindowName'] == 'Spring']
-		if vs_obj.terms[0] == 'SP2023' and vs_obj.metrics[0]=='DB':
+		elif vs_obj.terms[0] == 'SP2023' and vs_obj.metrics[0]=='DB':
 			vs_obj.df=vs_obj.df.loc[vs_obj.df['ScreeningPeriodWindowName'] == 'Spring']
 
 		vs_obj.df=vs_obj.df[vs_obj.df.EnrollmentStatus == 'Enrolled']
 	
 		vs_obj.df=vs_obj.df[vs_obj.df['CurrentGrade'].isin([9,10,11])]
-		
+
+#cleans column headers and adds chronic absenteesim data to output df		
 def chronicAbs(vs_obj, metric_column_index,finalDfs):
 	vs_obj.df=vs_obj.df[vs_obj.df['studentStatus'] =='Active']
 	rslt=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df['absCategory']], 
@@ -350,7 +359,7 @@ def chronicAbs(vs_obj, metric_column_index,finalDfs):
 	rslt=rslt.rename(columns = {'Chronic&Severe': vs_obj.assessment_type+" ALL_"+vs_obj.terms[0]})
 	rslt=rslt.reset_index().set_index('School_Short')
 	
-	#Grade Level
+	#chronic absenteeism data aggregated by Grade Level
 	rslt_GL=pd.crosstab([vs_obj.df.School_Short,vs_obj.df['Grade Level']],vs_obj.df['absCategory'], 
 						values=vs_obj.df.Student_Number, aggfunc='count',margins=True,normalize='index').mul(100).round(1)
 	idxRename = {'All':'District'} 
@@ -374,7 +383,7 @@ def chronicAbs(vs_obj, metric_column_index,finalDfs):
 	gradeLevelTab.append(grdLvl)
 	
 	
-	#Race
+	#chronic absentessims data aggregated by Race
 	rsltRace=pd.crosstab([vs_obj.df.School_Short, vs_obj.df.Race_Ethn],[vs_obj.df.absCategory], 
 						values=vs_obj.df.Student_Number, aggfunc='count',margins=True)
 	rsltRace=rsltRace.rename(index=idxRename)
@@ -448,6 +457,7 @@ def chronicAbs(vs_obj, metric_column_index,finalDfs):
 	
 	subgroups(vs_obj,0,finalDfs)					
 
+#ECSGI assessment data for TK students. identifies test for specific reporting purposes and calculates % of student meeting EOY Benchmark
 def ESGI(vs_obj, finalDfs):
 	test_names=['WCCUSD Uppercase Letters (PLF R 3.2)','WCCUSD Number Recognition 0-12 (PLF NS 1.2)','WCCUSD Lowercase Letters (PLF R 3.2)']
 	names={'WCCUSD Uppercase Letters (PLF R 3.2)':'UppCaseLet3','WCCUSD Number Recognition 0-12 (PLF NS 1.2)':'NumRec3','WCCUSD Lowercase Letters (PLF R 3.2)':'LowCaseLet'}
@@ -477,7 +487,7 @@ def ESGI(vs_obj, finalDfs):
 		
 		finalDfs.append(MetEOYBenchmark)
 		
-		#GradeLevel Tab
+		#ESGI data aggregated by Grade Level (cleans out students in K or 1 that were tested) for GradeLevel Tab
 		new=vs_obj.df.loc[vs_obj.df['Test Name']== test_name]
 			
 		esgiGrdLvl=pd.crosstab([new['School_Short'],new['Grade Level_y']],[new['Met EOY Benchmark']],values=vs_obj.df.Student_Number, 
@@ -513,11 +523,11 @@ def ESGI(vs_obj, finalDfs):
 		
 		gradeLevelTab.append(esgiGrdLvl)
 
-		#ESGI Race	
+		
 		vs_obj.df=vs_obj.df.rename(columns= {'Race_Ethn_y':'Race_Ethn', 'SPED_y':'SPED', 'FIT_y':'FIT',
 	       'Foster_y':'Foster', 'EL_y':'EL', 'SED_y':'SED'})
 
-	
+		#ESGI disaggregated by Race	
 		supesRace=pd.crosstab([vs_obj.df['Race_Ethn']],[vs_obj.df['Test Name'],vs_obj.df['Met EOY Benchmark']],margins=True)
 		supesRace.columns=['_'.join(col) for col in supesRace.columns.values]
 		
@@ -577,6 +587,7 @@ def ESGI(vs_obj, finalDfs):
 		
 		finalDfs.append(esgiRace)
 		
+		#ESGI disaggregated by student subgroup 
 		vs_obj.df.loc[vs_obj.df['SPED'] =='ESN', 'SPED'] = 'Y'
 		vs_obj.df.loc[vs_obj.df['SPED']=='MMSN', 'SPED'] = 'Y'
 		
@@ -640,13 +651,13 @@ def ESGI(vs_obj, finalDfs):
 			
 			finalDfs.append(final_subgroupCount)
 		
-	
+# STAR State Benchmark results based on most recent assessment 	
 def starSB(vs_obj, finalDfs):
 	idxRename = {'All':'District'} 
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 
     #new for 23-24 only calculating 9-11
-	newSTARFilter(vs_obj)
+	new23_24STARFilter(vs_obj)
 
 	#for previous cycles grade level filters were applied using the starFilters(vs_obj) function
 	#starFilters(vs_obj)
@@ -716,7 +727,8 @@ def starSB(vs_obj, finalDfs):
 	
 	subgroups(vs_obj,0, finalDfs)
 	grade_levels(vs_obj, 0, finalDfs)
-	
+
+#STAR Early Literacy Student Growth Proficiency results	
 def selSGP(vs_obj, finalDfs):
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 	
@@ -847,13 +859,14 @@ def selSGP(vs_obj, finalDfs):
 		finalDfs.append(rslt)
 
 		grade_levels(vs_obj, 0,finalDfs)
-								
+
+#STAR Student Growth Proficiency results								
 def starSGP(vs_obj, finalDfs):
 	#STAR SGP
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 	
     #for 23-24 only calculating 9-11
-	newSTARFilter(vs_obj)
+	new23_24STARFilter(vs_obj)
 
 	#for previous cycles grade level filters were applied using the starFilters(vs_obj) function
 	#starFilters(vs_obj)
@@ -917,14 +930,14 @@ def starSGP(vs_obj, finalDfs):
 	finalDfs.append(rslt)
 
 	grade_levels(vs_obj, 0,finalDfs)
-	
-	
+
+#STAR Student Growth Proficiency results by student subgroups	
 def starSGPSubgroups(vs_obj,finalDfs):	
 	#SGP Race/Ethnicity
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 	
 	#for 23-24 only calculating 9-11
-	newSTARFilter(vs_obj)
+	new23_24STARFilter(vs_obj)
 
 	#for previous cycles grade level filters were applied using the starFilters(vs_obj) function
 	#starFilters(vs_obj)
@@ -974,7 +987,6 @@ def starSGPSubgroups(vs_obj,finalDfs):
 	tableframe2=tableframe2.replace(to_replace=-1,value="*")
 	tableframe2=tableframe2.round(1).astype(str) + '%'
 	tableframe2=tableframe2.replace(to_replace="*%",value="*").replace(to_replace="nan%",value="")
-	
 	
 	#district totals
 	distTable=pd.pivot_table(vs_obj.df, values=['Typ_High','LowHigh'], index=['Race_Ethn'], aggfunc=np.sum)
@@ -1050,7 +1062,8 @@ def starSGPSubgroups(vs_obj,finalDfs):
 		tfSubgroup=tfSubgroup.replace(to_replace="-1%", value="*")
 
 		finalDfs.append(tfSubgroup)
-		
+
+#iReady assessment results - Percent Proficient		
 def iReadyPP(vs_obj,finalDfs):
 	#for Reading assessments, there was no need to filter for duplicates when students took a test in Spanish and English because there were no duplicates
 	#if vs_obj.terms[0] == 'W2022':
@@ -1184,9 +1197,7 @@ def iReadyPP(vs_obj,finalDfs):
 		
 		rsltRacePP.rename(columns=rename, inplace=True)
 		
-
-		#appends ppDistRace for District total to rsltRaceGL_pivt which has by school totals
-				
+		#appends ppDistRace for District total to rsltRaceGL_pivt which has by school totals		
 		frames=[rsltRacePP,rslt]
 		rsltRaceFinal=pd.concat(frames,
 							    axis=1,
@@ -1210,6 +1221,7 @@ def iReadyPP(vs_obj,finalDfs):
 		
 		subgroups(vs_obj,0, finalDfs)
 
+#iReady Grade Level Proficiency results
 def iReadyGradeLevel(vs_obj,finalDfs):
 
 	vs_obj.df=vs_obj.df[vs_obj.columns]
@@ -1228,15 +1240,10 @@ def iReadyGradeLevel(vs_obj,finalDfs):
 		iReadyFilter(vs_obj)
 		springWindowFilter(vs_obj)
 		
-		
-
 	rslt=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df['Overall Relative Placement']], values=vs_obj.df.Student_Number, aggfunc='count', margins=True)
-
 	rslt=rslt.rename(index={'All':'District'})
-
 	rslt=rslt.fillna(0)
 	rslt['On or Above']=rslt['Early On Grade Level']+rslt['Mid or Above Grade Level']
-
 
 	if '3 or More Grade Levels Below' in rslt.columns:
 		rslt['Below']=rslt['1 Grade Level Below']+rslt['2 Grade Levels Below']+rslt['3 or More Grade Levels Below']
@@ -1244,14 +1251,12 @@ def iReadyGradeLevel(vs_obj,finalDfs):
 		rslt['Below']=rslt['1 Grade Level Below']+rslt['2 Grade Levels Below']
 	
 	rslt['totalCount']=rslt['On or Above']+rslt['Below']
-	
-	
+		
 	drop_cols=['1 Grade Level Below', '2 Grade Levels Below', '3 or More Grade Levels Below']
 	for col in drop_cols:
 		if col in rslt.columns:
 			rslt =rslt.drop(col, axis=1)
-
-		
+	
 	rename={}
 	races={'African_American':'AA', 'American_Indian':'AI','American Indian':'AI','Asian':'A', 'Filipino':'F', 'Hispanic':'HL', 'Mult':'Mult',
 	   			'Pac_Islander':'PI', 'White':'W', 'Percent_On_Above':'ALL'}
@@ -1260,8 +1265,7 @@ def iReadyGradeLevel(vs_obj,finalDfs):
 			temp_col = vs_obj.assessment_type+vs_obj.subjects[0]+'GradeLevel '+races[col]+"_"+vs_obj.terms[0]
 			rename[col]=temp_col
 
-	rslt.rename(columns=rename, inplace=True)
-	
+	rslt.rename(columns=rename, inplace=True)	
 
 	rslt['Percent_On_Above']=(rslt['On or Above']/rslt['totalCount']).mul(100).round(1).astype('str')+'%'
 	rslt['Percent_On_Above'] = np.where((rslt['All']) <= 10,'*',rslt['Percent_On_Above'])
@@ -1377,6 +1381,7 @@ def iReadyGradeLevel(vs_obj,finalDfs):
 	
 	subgroups(vs_obj,0,finalDfs)
 
+#iReady Spanish results 
 def iReadySpan(vs_obj, finalDfs):
 	if 'SP2023' in vs_obj.terms[0]:
 		vs_obj.df=vs_obj.df[vs_obj.columns]
@@ -1385,7 +1390,6 @@ def iReadySpan(vs_obj, finalDfs):
 		vs_obj.df.replace(r'^\s*$', np.nan, regex=True)
 		vs_obj.df=vs_obj.df[vs_obj.df['Window'] =='End of Year']
 		springWindowFilter(vs_obj)
-		
 		
 		rsltCount=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df["Overall Spanish Placement"]], values=vs_obj.df["Overall Spanish Placement"], aggfunc='count', margins=True, margins_name='All')
 		rslt=pd.crosstab([vs_obj.df.School_Short],[vs_obj.df["Overall Spanish Placement"]], values=vs_obj.df["Overall Spanish Placement"], aggfunc='count',normalize='index', margins=True, margins_name='All').mul(100).round(1).astype(str)+"%"
@@ -1424,7 +1428,6 @@ def iReadySpan(vs_obj, finalDfs):
 
 		finalDfs.append(rslt)
 
-
 		#subgroups
 		vs_obj.df.loc[vs_obj.df['SPED'] =='ESN', 'SPED'] = 'Y'
 		vs_obj.df.loc[vs_obj.df['SPED']=='MMSN', 'SPED'] = 'Y'
@@ -1445,21 +1448,16 @@ def iReadySpan(vs_obj, finalDfs):
 			
 			if 'SPED' in subRslt.columns:
 				subRslt = subRslt[subRslt['SPED'] == 'Y']
-				
-			
 			elif 'EL' in subRslt.columns:
 				subRslt = subRslt[subRslt['EL'] == 'Y']
-
 			elif 'Foster' in subRslt.columns:
 				subRslt = subRslt[subRslt['Foster'] == 'Y']
 
 			subRslt.loc['District'] = subRslt.iloc[:, :].sum()
-
 			subRslt['Percentage Proficient']=(subRslt['Met']/subRslt['All']).mul(100).round(1).astype(str) + '%'
 			subRslt['Percentage Proficient'] = np.where((subRslt['All']) <= 10,'*',subRslt['Percentage Proficient'])
 			subRslt=subRslt.reset_index()
 			
-		
 			colRename = {'Percentage Proficient': vs_obj.assessment_type+vs_obj.subjects[0]+vs_obj.metrics[0]+" "+column.name+"_"+vs_obj.terms[0]}
 			subRslt = subRslt.rename(index=idxRename).rename(columns=colRename)
 			
@@ -1470,7 +1468,7 @@ def iReadySpan(vs_obj, finalDfs):
 			
 			finalDfs.append(subRslt)
 
-	
+#iReady Growth measure results 
 def iReadyGrw(vs_obj,finalDfs):
 	vs_obj.df=vs_obj.df[vs_obj.df['Baseline Diagnostic (Y/N)'] =='N']
 
@@ -1654,7 +1652,7 @@ def iReadyGrw(vs_obj,finalDfs):
 				
 				finalDfs.append(subRslt)
 	
-
+#STAR District Benchmark results 
 def starDB(vs_obj,finalDfs):
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 
@@ -1777,6 +1775,7 @@ def starDB(vs_obj,finalDfs):
 	
 	subgroups(vs_obj,0,finalDfs)
 
+# New function written in Spring 2023 to calculate subgroup data in a more efficient manner. subgroup function still needed for some assessments
 def newSubgroups(vs_obj, metric_column_index, subgroupCount, column):
 		if vs_obj.metrics[metric_column_index] == 'SGP':
 			pass
@@ -1835,7 +1834,8 @@ def newSubgroups(vs_obj, metric_column_index, subgroupCount, column):
 		subgroupCount=subgroupCount.replace(to_replace="-1%",value="*").replace(to_replace="nan%",value="*")
 
 		return(subgroupCount)
-	
+
+#calculates subgroup data for multiple assessments	
 def subgroups(vs_obj, metric_column_index, finalDfs):
 	
 	vs_obj.df=vs_obj.df[vs_obj.columns]
@@ -1887,8 +1887,7 @@ def subgroups(vs_obj, metric_column_index, finalDfs):
  		
 			supesGoalsTab.append(supesTabFinal)
 		
-
-gradeLevelTab=[]		
+#aggregates data into Grade Level groupings for most assessments		
 def grade_levels(vs_obj, metric_column_index, finalDfs):
 	print("WORKING on GRADE LEVEL TAB FOR: ", vs_obj.assessment_type, vs_obj.subjects[0],vs_obj.terms[0])
 	
@@ -1897,7 +1896,6 @@ def grade_levels(vs_obj, metric_column_index, finalDfs):
 		starFilters(vs_obj)
 		
 	#grade level calculations
-	
 	if (vs_obj.assessment_type == 'STAR' and vs_obj.metrics[metric_column_index] == 'SGP') or (vs_obj.assessment_type == 'SEL' and vs_obj.metrics[metric_column_index] == 'SGP'):
 		if vs_obj.terms[0] == 'FA2022':
 			vs_obj.df['Typical and High'] = vs_obj.df['StudentGrowthPercentileFallFall'].apply(lambda x:'Y' if x >=35 else 'N')
@@ -1918,7 +1916,6 @@ def grade_levels(vs_obj, metric_column_index, finalDfs):
 									columns= 'Grade Level',
 									values='Y')
 
-		
 		distGrdLvlSGP=pd.crosstab([vs_obj.df['Grade Level']],[vs_obj.df['Typical and High']],margins=True, normalize='index').mul(100).round(1).astype(str)+"%"
 		renameCol={'Y':'District'}
 		rename={'Grade Level':'School_Short'}
@@ -1964,7 +1961,8 @@ def grade_levels(vs_obj, metric_column_index, finalDfs):
 	gradeLevelTab.append(grdLvl)
 	
 	#finalDfs.append(grdLvl)
-	
+
+#appends Disproportionality Index from source file into output df and names columns 	
 def disIndx(vs_obj,finalDfs):
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 	vs_obj.df = vs_obj.df.replace(r'^\s*$', np.nan, regex=True)
@@ -1983,7 +1981,7 @@ def disIndx(vs_obj,finalDfs):
 	vs_obj.df.reset_index()
 	finalDfs.append(vs_obj.df)
 
-
+#appends suspension rate data from source file into output df and names columns
 def suspRte(vs_obj,finalDfs):
 	vs_obj.df=vs_obj.df[vs_obj.columns]
 
@@ -2007,22 +2005,23 @@ def suspRte(vs_obj,finalDfs):
 	if vs_obj.terms == 'FA2022':
 		vs_obj.df.rename(columns=SuspRteC1_renameCol, inplace=True)
 		
-	if vs_obj.terms == 'W2022':
+	elif vs_obj.terms == 'W2022':
 		vs_obj.df.rename(columns=SuspRteC2_renameCol, inplace=True)
 	
-	if vs_obj.terms == 'SP2023':					
+	elif vs_obj.terms == 'SP2023':					
 		vs_obj.df.rename(columns=SuspRteC3_renameCol, inplace=True)
 	
 	vs_obj.df=vs_obj.df.replace(to_replace="-",value="").replace(to_replace=-1,value="*").replace(to_replace="-%",value="")
 	vs_obj.df.reset_index()
 	
 	finalDfs.append(vs_obj.df)
-	
+
+#appends data from SAEBRS screener source file and names columns	
 def saebrsScreener(vs_obj,finalDfs):
 	vs_obj.df=vs_obj.df.rename(columns={'Percent Complete':'SAEBRSparticipation ALL_FA2022'})
 	finalDfs.append(vs_obj.df)
 	
-
+#creates final out put df for Grade Level Tab in School Scorecards. Columns are created based on column header names in ShortFeederDicts.py
 def createGradeLevelTab(gradeLevelTab):
 	GL_dfs = [df.replace(to_replace="*%",value="*").replace(to_replace=-1,value="*") for df in GradeLevelTab]
 	GLs_concatenated=pd.concat(GL_dfs, axis=0)
@@ -2036,7 +2035,7 @@ def createGradeLevelTab(gradeLevelTab):
 	worksheet = sheet.add_worksheet("Grade Level Tab"+dt_string, rows = 1000, cols=500)
 	set_with_dataframe(worksheet,GLs_concatenated,1,1,include_index=True)
 
-
+#creates filan output df for Vital Signs Scorecards. Concatenate on School_Short names. Columns are creatd based on column header namesn stored in ShortFeederDicts.py
 def createVitalSignsTab(finalDfs):
 	dfs = [df.reset_index().set_index('School_Short').replace(to_replace="*%",value="*").replace(to_replace=-1,value="*") for df in finalDfs]
 	concatenated=pd.concat(dfs, axis=1)

@@ -3,6 +3,8 @@ from VS_SupesGoals import *
 import sys
 
 finalDfs=[]
+supesGoalsTab=[]
+gradeLevelTab=[]
 
 # Demographics file FA2022
 

@@ -1,3 +1,6 @@
+""" These functions output the data needed specifically for the Superintendent's Goals report. Data is not disaggregated 
+by school names"""
+
 def supesGoals(vs_obj):
 	idxRename = {'All':'District'} 
 	
